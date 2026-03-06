@@ -2611,12 +2611,10 @@ function confirmNewRoom() {
   // Limpiar sala actual
   clearInterval(loopTimer); loopTimer = null;
   if (bc) { bc.close(); bc = null; }
-  peerConns.forEach(c => { try { c.close(); } catch(e) {} });
-  peerConns.clear();
   if (peerConn) { try { peerConn.close(); } catch(e) {} peerConn = null; }
   if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
   if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; ytReady = false; }
-  _connecting = false; _reconnects = 0;
+  reconnectAttempts = 0;
 
   queue = []; qIdx = -1; nowId = null;
   document.getElementById('log').innerHTML = '';
@@ -2709,221 +2707,243 @@ function initComms() {
 function makeHostId(code) { return 'ytrem-' + code.toLowerCase() + '-host'; }
 function makeRemoteId(code) { return 'ytrem-' + code.toLowerCase() + '-r-' + Math.random().toString(36).slice(2,7); }
 
-let _reconnects = 0;
-let _connecting = false; // guard: evita intentos paralelos de connectToHost
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+
+function tryNextServer() {
+  if (SERVERS.length > 1) {
+    currentServerIndex = (currentServerIndex + 1) % SERVERS.length;
+    log('🔄 Intentando servidor: ' + SERVERS[currentServerIndex].name, 'info');
+  }
+  setTimeout(initPeer, 2000);
+}
 
 function initPeer() {
-  _connecting = false;
   if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
-  if (!roomCode) return;
   setStatus('syncing', 'Conectando...');
+  reconnectAttempts = 0;
 
-  const srv = SERVERS[currentServerIndex];
   const myId = mode === 'host' ? makeHostId(roomCode) : makeRemoteId(roomCode);
-  log('🔌 ' + srv.name + ' | ID: ' + myId.slice(-12), 'info');
+  const serverConfig = getCurrentServer();
 
-  try { peer = new Peer(myId, srv); }
-  catch(e) { log('❌ ' + e.message, 'warn'); setTimeout(initPeer, 4000); return; }
+  log('🔌 Servidor: ' + serverConfig.name, 'info');
 
-  // Timeout si el servidor no responde
-  const sigT = setTimeout(() => {
-    if (!peer?.id) { try { peer?.destroy(); } catch(e) {} setTimeout(initPeer, 3000); }
+  try {
+    peer = new Peer(myId, serverConfig);
+  } catch(e) {
+    log('❌ Error creando Peer: ' + e.message, 'warn');
+    tryNextServer();
+    return;
+  }
+
+  const connectionTimeout = setTimeout(() => {
+    if (!peer || !peer.id) {
+      log('⏱️ Timeout conectando al servidor', 'warn');
+      try { peer.destroy(); } catch(e) {}
+      tryNextServer();
+    }
   }, 12000);
 
   peer.on('open', (id) => {
-    clearTimeout(sigT);
-    _reconnects = 0;
-    log('✅ Conectado al servidor', 'info');
+    clearTimeout(connectionTimeout);
+    reconnectAttempts = 0;
+    log('✅ Conectado al servidor con ID: ' + id, 'info');
+
     if (mode === 'host') {
       setStatus('connected', 'Esperando control...');
-      showToast('📺 Sala lista — ' + roomCode);
+      showToast('📺 Pantalla lista - Código: ' + roomCode);
+    } else {
+      setStatus('syncing', 'Buscando pantalla...');
+      connectToHost();
+    }
+  });
+
+  peer.on('connection', (conn) => {
+    const meta = conn.metadata || {};
+    if (roomPassword && meta.password !== roomPassword) {
+      log('🚫 Conexión rechazada: contraseña incorrecta', 'warn');
+      conn.on('open', () => {
+        try { conn.send({ type: 'auth-rejected' }); } catch(e) {}
+        setTimeout(() => { try { conn.close(); } catch(e) {} }, 500);
+      });
+      return;
+    }
+    log('📱 Control conectado', 'recv');
+    setupConn(conn);
+    setStatus('connected', 'Conectado ✅');
+    showToast('📱 Control conectado');
+    setTimeout(() => broadcastState(), 300);
+  });
+
+  peer.on('error', (err) => {
+    clearTimeout(connectionTimeout);
+    const msg = err.message || String(err);
+    log('⚠️ ' + msg.substring(0, 40), 'warn');
+    console.error('[PeerJS] Error:', err);
+
+    if (msg.includes('is taken') || msg.includes('ID') || msg.includes('already')) {
+      if (mode === 'host') {
+        log('⚠️ ID ocupado, reintentando...', 'warn');
+        setTimeout(() => {
+          try { peer.destroy(); } catch(e) {}
+          peer = null;
+          const altId = makeHostId(roomCode) + '-' + Math.random().toString(36).slice(2,4);
+          peer = new Peer(altId, serverConfig);
+          attachPeerEvents(serverConfig);
+        }, 1000);
+      }
+    } else if (msg.includes('Could not connect') || msg.includes('peer-unavailable') || msg.includes('unavailable')) {
+      if (mode === 'remote') {
+        setStatus('syncing', 'Esperando pantalla...');
+        log('⏳ Pantalla no encontrada, reintentando...', 'info');
+        setTimeout(connectToHost, 4000);
+      }
+    } else if (msg.includes('Lost') || msg.includes('websocket') || msg.includes('network') || msg.includes('server')) {
+      try { peer.destroy(); } catch(e) {}
+      peer = null;
+      tryNextServer();
+    }
+  });
+
+  peer.on('disconnected', () => {
+    reconnectAttempts++;
+    log('🔌 Desconectado del servidor (' + reconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS + ')', 'warn');
+
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      try { peer.destroy(); } catch(e) {}
+      peer = null;
+      tryNextServer();
+      return;
+    }
+
+    const delay = Math.min(1000 * reconnectAttempts, 5000);
+    setTimeout(() => {
+      if (peer && !peer.destroyed) {
+        try { peer.reconnect(); } catch(e) { tryNextServer(); }
+      }
+    }, delay);
+  });
+}
+
+function attachPeerEvents(serverConfig) {
+  if (!peer) return;
+
+  peer.on('open', (id) => {
+    log('✅ Reconectado con ID: ' + id, 'info');
+    if (mode === 'host') {
+      setStatus('connected', 'Esperando control...');
     } else {
       connectToHost();
     }
   });
 
   peer.on('connection', (conn) => {
-    if (mode !== 'host') return;
-    const meta = conn.metadata || {};
-    if (roomPassword && meta.password !== roomPassword) {
-      conn.on('open', () => {
-        try { conn.send({ type: 'auth-rejected' }); } catch(e) {}
-        setTimeout(() => { try { conn.close(); } catch(e) {} }, 400);
-      });
-      log('🚫 Rechazado: contraseña', 'warn');
-      return;
-    }
-    // Cerrar conexión anterior del mismo peer si existe
-    if (peerConns.has(conn.peer)) {
-      try { peerConns.get(conn.peer).close(); } catch(e) {}
-    }
     setupConn(conn);
-    updateRemoteCount();
-    showToast('📱 Control #' + peerConns.size + ' conectado');
-    setTimeout(() => broadcastState(), 400);
+    setStatus('connected', 'Conectado ✅');
+    showToast('📱 Conectado');
+    setTimeout(() => broadcastState(), 300);
   });
 
   peer.on('error', (err) => {
-    clearTimeout(sigT);
-    const t = err.type || '';
-    const m = (err.message || '').toLowerCase();
-    log('⚠️ ' + (t || m.slice(0,35)), 'warn');
-    console.error('[Peer]', err);
-
-    if (t === 'peer-unavailable' || m.includes('peer-unavailable') || m.includes('could not connect')) {
-      // Host no encontrado — solo aplica al control
-      if (mode === 'remote') {
-        setStatus('syncing', 'Esperando pantalla...');
-        setTimeout(() => { _connecting = false; connectToHost(); }, 4000);
-      }
-    } else if (t === 'unavailable-id' || t === 'peer-id-taken' || m.includes('is taken')) {
-      // ID ocupado: esperar y reintentar con el mismo ID
-      log('⚠️ ID en uso, reintentando en 6s...', 'warn');
-      setTimeout(initPeer, 6000);
-    } else {
-      // Error de red: rotar servidor
-      currentServerIndex = (currentServerIndex + 1) % SERVERS.length;
-      setTimeout(initPeer, 3000);
-    }
+    log('⚠️ Error: ' + (err.message || err).substring(0, 35), 'warn');
+    if (mode === 'remote') setTimeout(connectToHost, 3000);
   });
-
-  peer.on('disconnected', () => {
-    // Solo reconectar al servidor de señalización — NO destruir el peer
-    // Las conexiones WebRTC P2P ya establecidas siguen funcionando sin el servidor
-    _reconnects++;
-    log('🔌 Señalización perdida — reconectando...', 'warn');
-
-    if (_reconnects > 6) {
-      // Demasiados fallos: cambiar servidor y recrear
-      currentServerIndex = (currentServerIndex + 1) % SERVERS.length;
-      _reconnects = 0;
-      // Solo recrear si no hay conexiones activas
-      const hasActive = mode === 'host' ? peerConns.size > 0 : (peerConn && peerConn.open);
-      if (!hasActive) setTimeout(initPeer, 2000);
-    } else {
-      // Intentar reconectar al servidor de señalización sin destruir conexiones
-      setTimeout(() => {
-        if (peer && !peer.destroyed) {
-          try { peer.reconnect(); }
-          catch(e) { if (!hasActive()) setTimeout(initPeer, 2000); }
-        }
-      }, Math.min(1000 * _reconnects, 8000));
-    }
-  });
-
-  function hasActive() {
-    return mode === 'host' ? peerConns.size > 0 : (peerConn && peerConn.open);
-  }
 }
 
 function connectToHost() {
-  if (!roomCode || !peer || !peer.id) return;
-  if (peerConn && peerConn.open) return; // ya conectado
-  if (_connecting) return;               // ya hay un intento activo
-  _connecting = true;
+  if (!peer || !peer.id) {
+    log('⏳ Peer no listo, esperando...', 'info');
+    setTimeout(connectToHost, 1500);
+    return;
+  }
 
   const hostId = makeHostId(roomCode);
   setStatus('syncing', 'Buscando pantalla...');
-  log('🔌 Conectando a: ' + hostId.slice(-12), 'info');
+  log('🔌 Conectando a pantalla: ' + hostId, 'info');
 
   let conn;
   try {
     conn = peer.connect(hostId, {
       reliable: true,
       serialization: 'json',
-      metadata: { role: 'remote', room: roomCode, password: roomPassword }
+      metadata: { role: mode, room: roomCode }
     });
   } catch(e) {
-    _connecting = false;
-    log('❌ ' + e.message, 'warn');
-    setTimeout(connectToHost, 3000);
+    log('❌ Error al crear conexión: ' + e.message, 'warn');
+    setTimeout(connectToHost, 2000);
     return;
   }
 
-  const t = setTimeout(() => {
+  const connTimeout = setTimeout(() => {
     if (!conn.open) {
-      _connecting = false;
+      log('⏱️ Timeout buscando pantalla', 'warn');
       try { conn.close(); } catch(e) {}
-      log('⏱️ Timeout — reintentando...', 'warn');
-      setTimeout(connectToHost, 4000);
+      setStatus('syncing', 'Reintentando...');
+      setTimeout(connectToHost, 2000);
     }
-  }, 10000);
+  }, 8000);
 
   conn.on('open', () => {
-    clearTimeout(t);
-    _connecting = false;
+    clearTimeout(connTimeout);
     setupConn(conn);
-    setStatus('connected', 'Conectado ✅');
-    log('✅ Conectado a la pantalla', 'recv');
+    setStatus('connected', 'Conectado a pantalla ✅');
+    log('✅ ¡Conectado a la pantalla!', 'recv');
     showToast('✅ Conectado a la pantalla');
     conn.send({ type: 'request-state' });
   });
 
   conn.on('error', (e) => {
-    clearTimeout(t);
-    _connecting = false;
-    log('⚠️ Error WebRTC: ' + (e.type || e.message || ''), 'warn');
+    clearTimeout(connTimeout);
+    log('⚠️ Error de conexión: ' + (e.message || e), 'warn');
+    setStatus('syncing', 'Reintentando...');
     setTimeout(connectToHost, 3000);
   });
 }
 
 function setupConn(conn) {
-  const id = conn.peer;
-  if (mode === 'host') { peerConns.set(id, conn); }
-  else { peerConn = conn; }
+  peerConn = conn;
 
-  const ka = setInterval(() => {
-    if (conn.open) {
-      try { conn.send({ type: 'ping' }); } catch(e) { clearInterval(ka); }
-    } else { clearInterval(ka); }
+  const keepAliveInterval = setInterval(() => {
+    if (conn && conn.open) {
+      try { conn.send({ type: 'ping', time: Date.now() }); }
+      catch(e) { clearInterval(keepAliveInterval); }
+    } else {
+      clearInterval(keepAliveInterval);
+    }
   }, 5000);
 
   conn.on('data', (data) => {
-    if (!data?.type) return;
-    if (data.type === 'ping') { if (mode === 'host') try { conn.send({ type: 'pong' }); } catch(e) {} return; }
-    if (data.type === 'pong') return;
+    if (data && data.type === 'ping') return;
     handleMessage(data);
   });
 
   conn.on('close', () => {
-    clearInterval(ka);
-    if (mode === 'host') {
-      peerConns.delete(id);
-      updateRemoteCount();
-      log('🔌 Control desconectado (' + peerConns.size + ' restantes)', 'warn');
-    } else {
-      peerConn = null;
-      _connecting = false;
-      setStatus('disconnected', 'Desconectado');
-      showToast('🔌 Conexión perdida — reconectando');
-      setTimeout(connectToHost, 2000);
-    }
+    clearInterval(keepAliveInterval);
+    peerConn = null;
+    setStatus('disconnected', 'Desconectado');
+    log('🔌 Conexión cerrada', 'warn');
+    showToast('🔌 Conexión perdida');
+    if (mode === 'remote') setTimeout(connectToHost, 2000);
   });
 
   conn.on('error', (e) => {
-    clearInterval(ka);
-    if (mode === 'host') {
-      peerConns.delete(id);
-      updateRemoteCount();
-    } else {
-      peerConn = null;
-      _connecting = false;
-      setStatus('disconnected', 'Error');
-      setTimeout(connectToHost, 2000);
-    }
+    clearInterval(keepAliveInterval);
+    peerConn = null;
+    setStatus('disconnected', 'Error de conexión');
+    log('⚠️ Error: ' + (e.message || e), 'warn');
+    if (mode === 'remote') setTimeout(connectToHost, 2000);
   });
 }
 
 function updateRemoteCount() {
-  const n = peerConns.size;
-  if (n === 0) {
-    setStatus('connected', 'Esperando control...');
-    document.getElementById('remote-count-badge').style.display = 'none';
-  } else {
+  // En el original peerConn es única — mostramos badge simple
+  const badge = document.getElementById('remote-count-badge');
+  if (peerConn && peerConn.open) {
     setStatus('connected', 'Conectado ✅');
-    const badge = document.getElementById('remote-count-badge');
     badge.style.display = 'inline-flex';
-    badge.textContent = n + (n === 1 ? ' control' : ' controles');
+    badge.textContent = '1 control';
+  } else {
+    badge.style.display = 'none';
   }
 }
 
@@ -2931,26 +2951,14 @@ function updateRemoteCount() {
    BROADCAST (enviar a todos)
    ═══════════════════════════════════════════════════════ */
 function broadcast(data) {
-  // BroadcastChannel (misma PC, instantáneo)
   if (bc) bc.postMessage(data);
-  // PeerJS — enviar a TODOS los controles conectados (host) o al host (remote)
-  if (mode === 'host') {
-    peerConns.forEach((conn) => {
-      if (conn && conn.open) {
-        try { conn.send(data); } catch(e) {}
-      }
-    });
-  } else {
-    if (peerConn && peerConn.open) {
-      try { peerConn.send(data); } catch(e) {}
-    }
+  if (peerConn && peerConn.open) {
+    try { peerConn.send(data); } catch(e) {}
   }
 }
 
 function sendCmdToHost(cmd) {
-  // BroadcastChannel (misma PC)
   if (bc) bc.postMessage(cmd);
-  // PeerJS → solo al host
   if (peerConn && peerConn.open) {
     try { peerConn.send(cmd); } catch(e) {}
   }
@@ -2964,8 +2972,6 @@ function leaveRoom() {
   
   if (bc) { bc.close(); bc = null; }
   // Cerrar todas las conexiones (host puede tener múltiples)
-  peerConns.forEach(conn => { try { conn.close(); } catch(e) {} });
-  peerConns.clear();
   if (peerConn) { try { peerConn.close(); } catch(e) {} peerConn = null; }
   if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
   
@@ -2974,8 +2980,7 @@ function leaveRoom() {
   queue = [];
   qIdx = -1;
   nowId = null;
-  _connecting = false;
-  _reconnects = 0;
+  reconnectAttempts = 0;
   
   if (ytPlayer) {
     try { ytPlayer.destroy(); } catch(e) {}
