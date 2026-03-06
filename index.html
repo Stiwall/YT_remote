@@ -2621,6 +2621,8 @@ function confirmNewRoom() {
   const code = document.getElementById('new-room-input').value.trim().toUpperCase();
   if (!code) { showToast('⚠️ Escribe un código'); return; }
 
+  // BUG FIX: leer contraseña ANTES de cerrar/limpiar el modal
+  const newPassword = document.getElementById('new-room-password').value.trim();
   closeNewRoomModal();
 
   // Limpiar sala actual sin mostrar setup screen
@@ -2634,8 +2636,12 @@ function confirmNewRoom() {
 
   // Resetear estado
   queue = []; qIdx = -1; nowId = null;
-  connectAttempts = 0;
-  currentServerIndex = 0;
+  _peerReady = false;
+  _connectingInProgress = false;
+  _hostConnAttempts = 0;
+  _reconnectCount = 0;
+  _useRelay = false;
+  _clearConnectTimer();
   document.getElementById('log').innerHTML = '';
   document.getElementById('now-title').textContent = '—';
   document.getElementById('placeholder').style.display = 'flex';
@@ -2646,7 +2652,6 @@ function confirmNewRoom() {
   setPlayingState(false);
 
   // Aplicar nuevo modo y código
-  const newPassword = document.getElementById('new-room-password').value.trim();
   setMode(_newRoomMode);
   mode = _newRoomMode;
   roomCode = code;
@@ -2733,230 +2738,229 @@ function joinRoom() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   INICIALIZAR COMUNICACIÓN
-   BroadcastChannel para misma pestaña (instantáneo)
-   + PeerJS WebRTC para dispositivos remotos
+   COMUNICACIÓN — BroadcastChannel + PeerJS WebRTC
    ═══════════════════════════════════════════════════════ */
+
+// IDs deterministas
+function makeHostId(code) { return 'ytrem-' + code.toLowerCase() + '-host'; }
+function makeRemoteId(code) { return 'ytrem-' + code.toLowerCase() + '-r-' + Math.random().toString(36).slice(2,7); }
+
+// Estado de conexión centralizado
+let _peerReady       = false;   // el peer está registrado en el servidor
+let _connectTimer    = null;    // único timer de reconexión activo
+let _reconnectCount  = 0;       // intentos de reconexión al servidor PeerJS
+let _hostConnAttempts = 0;      // intentos de llegar al host (solo remote)
+let _useRelay        = false;   // forzar TURN después de varios fallos
+
+function _clearConnectTimer() {
+  if (_connectTimer) { clearTimeout(_connectTimer); _connectTimer = null; }
+}
+
 function initComms() {
-  // BroadcastChannel para pestañas del mismo navegador
+  // BroadcastChannel — misma pestaña/navegador (instantáneo, sin WebRTC)
   try {
+    if (bc) { bc.close(); bc = null; }
     bc = new BroadcastChannel('ytrem:' + roomCode);
     bc.onmessage = (e) => handleMessage(e.data);
   } catch(e) {}
 
-  // PeerJS para otros dispositivos
+  _peerReady = false;
+  _connectTimer = null;
+  _reconnectCount = 0;
+  _hostConnAttempts = 0;
+  _useRelay = false;
+  currentServerIndex = 0;
   initPeer();
 }
 
-// IDs deterministas: host usa ID fijo, remote usa ID aleatorio
-function makeHostId(code) {
-  return 'ytrem-' + code.toLowerCase() + '-host';
-}
-function makeRemoteId(code) {
-  return 'ytrem-' + code.toLowerCase() + '-r-' + Math.random().toString(36).slice(2, 7);
-}
-
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-
-function tryNextServer() {
-  if (SERVERS.length > 1) {
-    currentServerIndex = (currentServerIndex + 1) % SERVERS.length;
-    log('🔄 Intentando servidor: ' + SERVERS[currentServerIndex].name, 'info');
-  }
-  setTimeout(initPeer, 2000);
-}
-
 function initPeer() {
-  if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
-  setStatus('syncing', 'Conectando...');
-  reconnectAttempts = 0;
-
-  // Host usa ID fijo (determinista) para que el control pueda encontrarlo
-  // Remote usa ID aleatorio para evitar conflictos de ID duplicado
-  const myId = mode === 'host' ? makeHostId(roomCode) : makeRemoteId(roomCode);
-  const serverConfig = getCurrentServer();
-
-  log('🔌 Servidor: ' + serverConfig.name, 'info');
-  console.log('[PeerJS] ID:', myId, '| Servidor:', serverConfig.name);
-
-  try {
-    peer = new Peer(myId, serverConfig);
-  } catch(e) {
-    log('❌ Error creando Peer: ' + e.message, 'warn');
-    tryNextServer();
-    return;
+  // Destruir peer anterior limpiamente
+  if (peer) {
+    peer.removeAllListeners?.();
+    try { peer.destroy(); } catch(e) {}
+    peer = null;
   }
+  _peerReady = false;
+  _clearConnectTimer();
 
-  // Timeout de conexión inicial
-  const connectionTimeout = setTimeout(() => {
-    if (!peer || !peer.id) {
-      log('⏱️ Timeout conectando al servidor', 'warn');
-      try { peer.destroy(); } catch(e) {}
-      tryNextServer();
+  if (!roomCode) return; // ya salimos
+
+  const srv = _useRelay ? SERVERS[1] : SERVERS[0];
+  const myId = mode === 'host' ? makeHostId(roomCode) : makeRemoteId(roomCode);
+
+  log(`🔌 Conectando al servidor… (${_useRelay ? 'relay' : 'directo'})`, 'info');
+  console.log('[Peer] ID:', myId);
+
+  try { peer = new Peer(myId, srv); }
+  catch(e) { log('❌ Error creando Peer: ' + e.message, 'warn'); _scheduleReconnect(5000); return; }
+
+  // ── Timeout inicial de señalización ──────────────────
+  const sigTimeout = setTimeout(() => {
+    if (!_peerReady) {
+      log('⏱️ Sin respuesta del servidor, reintentando...', 'warn');
+      _scheduleReconnect(3000);
     }
-  }, 12000);
+  }, 15000);
 
+  // ── open: peer registrado en el servidor ─────────────
   peer.on('open', (id) => {
-    clearTimeout(connectionTimeout);
-    reconnectAttempts = 0;
-    log('✅ En servidor ' + serverConfig.name + ' con ID: ' + id, 'info');
-    console.log('[PeerJS] Conectado:', id);
+    clearTimeout(sigTimeout);
+    _peerReady = true;
+    _reconnectCount = 0;
+    log('✅ Servidor OK — ID: ' + id, 'info');
+    console.log('[Peer] open:', id);
 
     if (mode === 'host') {
       setStatus('connected', 'Esperando control...');
-      showToast('📺 Pantalla lista - Código: ' + roomCode);
+      showToast('📺 Sala lista — Código: ' + roomCode);
     } else {
-      setStatus('syncing', 'Buscando pantalla...');
-      connectToHost();
+      // ÚNICA llamada a connectToHost; el guard interno previene duplicados
+      _scheduleConnectToHost(200);
     }
   });
 
+  // ── connection: alguien se conecta a nosotros (host) ─
   peer.on('connection', (conn) => {
-    // Verificar contraseña si la sala la tiene configurada
+    if (mode !== 'host') return; // el control nunca recibe conexiones entrantes
     const meta = conn.metadata || {};
     if (roomPassword && meta.password !== roomPassword) {
-      log('🚫 Conexión rechazada: contraseña incorrecta', 'warn');
       conn.on('open', () => {
         try { conn.send({ type: 'auth-rejected', reason: 'Contraseña incorrecta' }); } catch(e) {}
         setTimeout(() => { try { conn.close(); } catch(e) {} }, 500);
       });
+      log('🚫 Conexión rechazada: contraseña incorrecta', 'warn');
       return;
     }
-    const n = peerConns.size + 1;
-    log(`📱 Control #${n} conectado`, 'recv');
+    // Evitar duplicados: si ya existe conexión de este peer, cerrar la vieja
+    if (peerConns.has(conn.peer)) {
+      try { peerConns.get(conn.peer).close(); } catch(e) {}
+      peerConns.delete(conn.peer);
+    }
     setupConn(conn);
-    setStatus('connected', 'Conectado ✅');
-    showToast(`📱 Control #${n} conectado`);
-    setTimeout(() => broadcastState(), 300);
+    // Enviar estado actual al control recién conectado
+    conn.on('open', () => {
+      const n = peerConns.size;
+      log(`📱 Control #${n} conectado`, 'recv');
+      showToast(`📱 Control #${n} conectado`);
+      setStatus('connected', 'Conectado ✅');
+      setTimeout(() => broadcastState(), 300);
+    });
   });
 
+  // ── error del peer/servidor ───────────────────────────
   peer.on('error', (err) => {
-    clearTimeout(connectionTimeout);
-    const msg = err.message || String(err);
-    log('⚠️ ' + msg.substring(0, 40), 'warn');
-    console.error('[PeerJS] Error:', err);
+    clearTimeout(sigTimeout);
+    // PeerJS expone el tipo en err.type, el mensaje puede variar por versión
+    const errType = err.type || '';
+    const errMsg  = (err.message || String(err)).toLowerCase();
+    console.error('[Peer] error type:', errType, '| msg:', errMsg);
+    log(`⚠️ ${errType || errMsg.substring(0,40)}`, 'warn');
 
-    if (msg.includes('is taken') || msg.includes('ID') || msg.includes('already')) {
-      // Solo el host puede tener ID duplicado - reintentar con ID diferente
-      if (mode === 'host') {
-        log('⚠️ ID ocupado, reintentando...', 'warn');
-        setTimeout(() => {
-          try { peer.destroy(); } catch(e) {}
-          peer = null;
-          // Añadir sufijo aleatorio temporal
-          const altId = makeHostId(roomCode) + '-' + Math.random().toString(36).slice(2,4);
-          peer = new Peer(altId, serverConfig);
-          attachPeerEvents(serverConfig);
-        }, 1000);
-      }
-    } else if (msg.includes('Could not connect') || msg.includes('peer-unavailable') || msg.includes('unavailable')) {
+    if (errType === 'unavailable-id' || errType === 'peer-id-taken') {
+      // El host tiene ID ocupado — esperar a que la sesión anterior expire
+      log('⚠️ ID en uso, esperando liberación (8s)...', 'warn');
+      _scheduleReconnect(8000);
+    } else if (errType === 'peer-unavailable') {
+      // El host no está en línea todavía — reintentar con backoff
       if (mode === 'remote') {
-        setStatus('syncing', 'Esperando pantalla...');
         log('⏳ Pantalla no encontrada, reintentando...', 'info');
-        setTimeout(connectToHost, 4000);
+        _hostConnAttempts++;
+        _scheduleConnectToHost(_backoffDelay(_hostConnAttempts));
       }
-    } else if (msg.includes('Lost') || msg.includes('websocket') || msg.includes('network') || msg.includes('server')) {
-      try { peer.destroy(); } catch(e) {}
-      peer = null;
-      tryNextServer();
+    } else if (errType === 'network' || errType === 'server-error' ||
+               errType === 'socket-error' || errType === 'socket-closed' ||
+               errMsg.includes('websocket') || errMsg.includes('lost')) {
+      log('🔌 Error de red, reconectando...', 'warn');
+      _scheduleReconnect(3000);
+    } else {
+      // Error desconocido — reconectar conservadoramente
+      _scheduleReconnect(5000);
     }
   });
 
+  // ── disconnected del servidor (NO del peer remoto) ───
   peer.on('disconnected', () => {
-    reconnectAttempts++;
-    log('🔌 Desconectado del servidor (' + reconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS + ')', 'warn');
+    _peerReady = false;
+    _reconnectCount++;
+    log(`🔌 Desconectado del servidor (${_reconnectCount})`, 'warn');
 
-    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      try { peer.destroy(); } catch(e) {}
-      peer = null;
-      tryNextServer();
+    if (_reconnectCount >= 5) {
+      log('🔁 Demasiados intentos, cambiando configuración...', 'warn');
+      _useRelay = !_useRelay;
+      _reconnectCount = 0;
+      _scheduleReconnect(3000);
       return;
     }
-
-    const delay = Math.min(1000 * reconnectAttempts, 5000);
+    // Intentar reconectar al servidor PeerJS (mantiene el ID)
+    const delay = Math.min(1500 * _reconnectCount, 8000);
     setTimeout(() => {
       if (peer && !peer.destroyed) {
-        try { peer.reconnect(); } catch(e) { tryNextServer(); }
+        try { peer.reconnect(); }
+        catch(e) { _scheduleReconnect(delay); }
       }
     }, delay);
   });
-}
 
-// Reutilizable para adjuntar eventos a un peer recién creado
-function attachPeerEvents(serverConfig) {
-  if (!peer) return;
-
-  peer.on('open', (id) => {
-    log('✅ Reconectado con ID: ' + id, 'info');
-    if (mode === 'host') {
-      setStatus('connected', 'Esperando control...');
-    } else {
-      connectToHost();
-    }
-  });
-
-  peer.on('connection', (conn) => {
-    const meta = conn.metadata || {};
-    if (roomPassword && meta.password !== roomPassword) {
-      log('🚫 Conexión rechazada: contraseña incorrecta', 'warn');
-      conn.on('open', () => {
-        try { conn.send({ type: 'auth-rejected', reason: 'Contraseña incorrecta' }); } catch(e) {}
-        setTimeout(() => { try { conn.close(); } catch(e) {} }, 500);
-      });
-      return;
-    }
-    const n = peerConns.size + 1;
-    setupConn(conn);
-    setStatus('connected', 'Conectado ✅');
-    showToast(`📱 Control #${n} conectado`);
-    setTimeout(() => broadcastState(), 300);
-  });
-
-  peer.on('error', (err) => {
-    log('⚠️ Error: ' + (err.message || err).substring(0, 35), 'warn');
-    if (mode === 'remote') setTimeout(connectToHost, 3000);
+  peer.on('close', () => {
+    _peerReady = false;
+    log('🔌 Peer cerrado', 'warn');
   });
 }
 
-let connectAttempts = 0;
-const MAX_CONNECT_ATTEMPTS = 12; // más intentos antes de rendirse
+// ── Helpers de scheduling ─────────────────────────────
+function _backoffDelay(attempt) {
+  return Math.min(1500 * Math.pow(1.5, attempt - 1), 12000);
+}
+
+function _scheduleReconnect(delay) {
+  _clearConnectTimer();
+  if (!roomCode) return;
+  _connectTimer = setTimeout(initPeer, delay);
+}
+
+function _scheduleConnectToHost(delay) {
+  _clearConnectTimer();
+  if (!roomCode) return;
+  _connectTimer = setTimeout(connectToHost, delay);
+}
+
+// ── connectToHost: solo un intento activo a la vez ────
+let _connectingInProgress = false;
 
 function connectToHost() {
-  if (!roomCode) return; // ya salimos de la sala
-  if (!peer || !peer.id) {
-    log('⏳ Peer no listo, esperando...', 'info');
-    setTimeout(connectToHost, 1500);
+  if (!roomCode) return;
+  if (peerConn && peerConn.open) return;       // ya conectado
+  if (_connectingInProgress) return;            // ya hay un intento en curso
+  if (!peer || !_peerReady) {
+    // Peer no listo aún — esperar sin contar como intento
+    _scheduleConnectToHost(1000);
     return;
   }
 
-  connectAttempts++;
+  _connectingInProgress = true;
+  _hostConnAttempts++;
   const hostId = makeHostId(roomCode);
+  const delay  = _backoffDelay(_hostConnAttempts);
+
+  if (_hostConnAttempts === 1) log('🔌 Buscando pantalla: ' + hostId, 'info');
+  else log(`🔄 Intento ${_hostConnAttempts} (${Math.round(delay/1000)}s backoff)...`, 'info');
   setStatus('syncing', 'Buscando pantalla...');
 
-  // Backoff exponencial: 2s, 3s, 4s... hasta 8s máximo
-  const delay = Math.min(2000 * Math.ceil(connectAttempts / 3), 8000);
-  if (connectAttempts > 1) {
-    log(`🔄 Intento ${connectAttempts}/${MAX_CONNECT_ATTEMPTS} (en ${delay/1000}s)...`, 'info');
-  } else {
-    log('🔌 Conectando a pantalla: ' + hostId, 'info');
-  }
-
-  // Si llevamos muchos intentos, forzar modo relay (TURN) para romper NAT
-  if (connectAttempts === 5) {
-    log('🔁 Cambiando a modo relay para mejor penetración NAT...', 'info');
-    currentServerIndex = 1; // servidor con iceTransportPolicy: 'relay'
-    try { peer.destroy(); } catch(e) {}
-    peer = null;
-    setTimeout(initPeer, 500);
+  // Cambiar a relay después de 5 intentos fallidos
+  if (_hostConnAttempts === 5 && !_useRelay) {
+    log('🔁 Activando TURN relay para NAT estricto...', 'info');
+    _useRelay = true;
+    _connectingInProgress = false;
+    _scheduleReconnect(500);
     return;
   }
 
-  if (connectAttempts > MAX_CONNECT_ATTEMPTS) {
-    setStatus('disconnected', 'No se encontró la pantalla');
-    log('❌ No se pudo encontrar la pantalla. Verifica el código.', 'warn');
+  if (_hostConnAttempts > 15) {
+    _connectingInProgress = false;
+    _hostConnAttempts = 0;
+    setStatus('disconnected', 'Pantalla no encontrada');
+    log('❌ No se pudo conectar. Verifica el código.', 'warn');
     showToast('❌ Pantalla no encontrada — verifica el código');
-    connectAttempts = 0;
     return;
   }
 
@@ -2965,42 +2969,46 @@ function connectToHost() {
     conn = peer.connect(hostId, {
       reliable: true,
       serialization: 'json',
-      metadata: { role: mode, room: roomCode, password: roomPassword }
+      metadata: { role: 'remote', room: roomCode, password: roomPassword }
     });
   } catch(e) {
-    log('❌ Error al crear conexión: ' + e.message, 'warn');
-    setTimeout(connectToHost, delay);
+    _connectingInProgress = false;
+    log('❌ No se pudo crear conexión: ' + e.message, 'warn');
+    _scheduleConnectToHost(delay);
     return;
   }
 
-  // Timeout adaptativo: más corto los primeros intentos, más largo los últimos
-  const connTimeout = setTimeout(() => {
+  // Timeout si el handshake WebRTC tarda demasiado
+  const t = setTimeout(() => {
     if (!conn.open) {
-      log('⏱️ Timeout — reintentando...', 'warn');
+      _connectingInProgress = false;
       try { conn.close(); } catch(e) {}
-      setStatus('syncing', 'Reintentando...');
-      setTimeout(connectToHost, delay);
+      log('⏱️ Timeout WebRTC — reintentando...', 'warn');
+      _scheduleConnectToHost(delay);
     }
-  }, Math.min(5000 + connectAttempts * 1000, 12000));
+  }, 10000);
 
   conn.on('open', () => {
-    clearTimeout(connTimeout);
-    connectAttempts = 0;
+    clearTimeout(t);
+    _connectingInProgress = false;
+    _hostConnAttempts = 0;
     setupConn(conn);
-    setStatus('connected', 'Conectado a pantalla ✅');
+    setStatus('connected', 'Conectado ✅');
     log('✅ ¡Conectado a la pantalla!', 'recv');
     showToast('✅ Conectado a la pantalla');
     conn.send({ type: 'request-state' });
   });
 
   conn.on('error', (e) => {
-    clearTimeout(connTimeout);
-    log('⚠️ Error de conexión: ' + (e.message || e), 'warn');
-    setStatus('syncing', 'Reintentando...');
-    setTimeout(connectToHost, delay);
+    clearTimeout(t);
+    _connectingInProgress = false;
+    const errType = e.type || '';
+    log(`⚠️ Error WebRTC: ${errType || (e.message||'').substring(0,30)}`, 'warn');
+    _scheduleConnectToHost(delay);
   });
 }
 
+// ── setupConn: registrar eventos de una conexión activa ─
 function setupConn(conn) {
   const connId = conn.peer;
 
@@ -3011,69 +3019,57 @@ function setupConn(conn) {
     peerConn = conn;
   }
 
-  // Keep-alive: ping cada 3s (antes era 5s) para detectar caídas más rápido
-  let missedPongs = 0;
-  const keepAliveInterval = setInterval(() => {
-    if (conn && conn.open) {
-      try {
-        conn.send({ type: 'ping', time: Date.now() });
-        if (mode === 'remote') {
-          missedPongs++;
-          if (missedPongs >= 3) {
-            // 3 pings sin pong = conexión muerta
-            log('💀 Sin respuesta del host, reconectando...', 'warn');
-            clearInterval(keepAliveInterval);
-            try { conn.close(); } catch(e) {}
-          }
-        }
-      } catch(e) { clearInterval(keepAliveInterval); }
-    } else {
-      clearInterval(keepAliveInterval);
+  // Keep-alive: ping cada 5s, detectar silencio prolongado
+  let lastPong = Date.now();
+  const ka = setInterval(() => {
+    if (!conn.open) { clearInterval(ka); return; }
+    try { conn.send({ type: 'ping', t: Date.now() }); } catch(e) { clearInterval(ka); return; }
+    if (mode === 'remote' && Date.now() - lastPong > 20000) {
+      log('💀 Host sin respuesta 20s, reconectando...', 'warn');
+      clearInterval(ka);
+      try { conn.close(); } catch(e) {}
     }
-  }, 3000);
+  }, 5000);
 
   conn.on('data', (data) => {
-    if (data && data.type === 'ping') {
-      if (mode === 'host') {
-        try { conn.send({ type: 'pong', time: Date.now() }); } catch(e) {}
-      }
+    if (!data || !data.type) return;
+    if (data.type === 'ping') {
+      if (mode === 'host') try { conn.send({ type: 'pong', t: Date.now() }); } catch(e) {}
       return;
     }
-    if (data && data.type === 'pong') {
-      missedPongs = 0; // host sigue vivo
-      return;
-    }
+    if (data.type === 'pong') { lastPong = Date.now(); return; }
     handleMessage(data);
   });
 
   conn.on('close', () => {
-    clearInterval(keepAliveInterval);
+    clearInterval(ka);
     if (mode === 'host') {
       peerConns.delete(connId);
       updateRemoteCount();
-      log('🔌 Control desconectado (' + peerConns.size + ' restantes)', 'warn');
-      if (peerConns.size === 0) setStatus('connected', 'Esperando control...');
+      log(`🔌 Control desconectado (${peerConns.size} restantes)`, 'warn');
     } else {
       peerConn = null;
-      connectAttempts = 0;
+      _connectingInProgress = false;
+      _hostConnAttempts = 0;
       setStatus('disconnected', 'Desconectado');
-      log('🔌 Conexión cerrada, reconectando...', 'warn');
+      log('🔌 Conexión perdida, reconectando...', 'warn');
       showToast('🔌 Conexión perdida — reconectando');
-      setTimeout(connectToHost, 1500);
+      _scheduleConnectToHost(2000);
     }
   });
 
   conn.on('error', (e) => {
-    clearInterval(keepAliveInterval);
+    clearInterval(ka);
     if (mode === 'host') {
       peerConns.delete(connId);
       updateRemoteCount();
     } else {
       peerConn = null;
-      connectAttempts = 0;
+      _connectingInProgress = false;
+      _hostConnAttempts = 0;
       setStatus('disconnected', 'Error de conexión');
-      log('⚠️ Error: ' + (e.message || e), 'warn');
-      setTimeout(connectToHost, 2000);
+      log('⚠️ Error conn: ' + (e.message || e.type || e), 'warn');
+      _scheduleConnectToHost(3000);
     }
   });
 }
@@ -3138,8 +3134,12 @@ function leaveRoom() {
   queue = [];
   qIdx = -1;
   nowId = null;
-  connectAttempts = 0;
-  currentServerIndex = 0;
+  _peerReady = false;
+  _connectingInProgress = false;
+  _hostConnAttempts = 0;
+  _reconnectCount = 0;
+  _useRelay = false;
+  _clearConnectTimer();
   
   if (ytPlayer) {
     try { ytPlayer.destroy(); } catch(e) {}
@@ -3185,18 +3185,20 @@ function showToast(msg) {
    LOOP PRINCIPAL
    ═══════════════════════════════════════════════════════ */
 function startLoop() {
+  // BUG FIX: limpiar siempre el timer anterior antes de crear uno nuevo
+  if (loopTimer) { clearInterval(loopTimer); loopTimer = null; }
+  let lastBroadcastSec = -1;
   loopTimer = setInterval(() => {
     if (mode !== 'host' || !ytPlayer || !ytReady) return;
-    
     const t = ytPlayer.getCurrentTime?.() || 0;
     const d = ytPlayer.getDuration?.() || 1;
-    
     document.getElementById('prog-fill').style.width = (d > 0 ? t / d * 100 : 0) + '%';
     document.getElementById('t-cur').textContent = fmt(t);
     document.getElementById('t-dur').textContent = fmt(d);
-    
-    // Broadcast cada 2 segundos
-    if (Math.floor(t) % 2 === 0) {
+    // BUG FIX: broadcast exactamente cada 2s usando variable dedicada (no t%2 que es float)
+    const currentSec = Math.floor(t);
+    if (currentSec !== lastBroadcastSec && currentSec % 2 === 0) {
+      lastBroadcastSec = currentSec;
       broadcastState();
     }
   }, 1000);
