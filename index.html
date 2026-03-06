@@ -3317,17 +3317,22 @@ function urlToQueue() {
 }
 
 function loadVideo(vid, meta) {
+  if (!vid) return;
   nowId = vid;
   const title = meta?.title || vid;
   document.getElementById('now-title').textContent = title;
+
+  // Asegurar que el panel del player es visible (puede estar oculto)
+  const hp = document.getElementById('host-panel');
+  if (hp) hp.style.display = 'block';
   document.getElementById('placeholder').style.display = 'none';
-  
+
   if (ytPlayer && ytReady) {
     ytPlayer.loadVideoById(vid);
   } else {
     initPlayer(vid);
   }
-  
+
   broadcastState();
 }
 
@@ -3715,37 +3720,65 @@ function playResult(item) {
 /* ═══════════════════════════════════════════════════════
    YOUTUBE IFRAME API
    ═══════════════════════════════════════════════════════ */
+let _pendingVideoId = null; // video a reproducir cuando YT esté listo
+
 function onYouTubeIframeAPIReady() {
   log('YouTube API listo', 'info');
+  // Si hay un video pendiente (se pidió reproducir antes de que la API cargara)
+  if (_pendingVideoId) {
+    const vid = _pendingVideoId;
+    _pendingVideoId = null;
+    initPlayer(vid);
+  }
 }
 
 function initPlayer(videoId) {
+  // Si la API de YouTube aún no cargó, guardar y esperar
+  if (typeof YT === 'undefined' || !YT.Player) {
+    log('⏳ API YouTube cargando...', 'info');
+    _pendingVideoId = videoId;
+    return;
+  }
+
   if (ytPlayer) {
     try { ytPlayer.destroy(); } catch(e) {}
+    ytPlayer = null;
   }
-  
   ytReady = false;
+
+  // Asegurar que el div #player existe y está vacío
+  const playerDiv = document.getElementById('player');
+  if (!playerDiv) { log('❌ Sin div #player', 'warn'); return; }
+  playerDiv.innerHTML = '';
+
   ytPlayer = new YT.Player('player', {
     videoId,
-    playerVars: { 
-      autoplay: 1, 
-      controls: 1, 
-      rel: 0, 
-      modestbranding: 1 
+    playerVars: {
+      autoplay: 1,
+      controls: 1,
+      rel: 0,
+      modestbranding: 1,
+      playsinline: 1  // necesario en iOS para no abrir pantalla completa
     },
     events: {
       onReady(e) {
         ytReady = true;
         e.target.setVolume(+document.getElementById('vol-slider').value);
-        log('Reproductor listo', 'recv');
+        log('▶ Reproductor listo', 'recv');
+        broadcastState();
       },
       onStateChange(e) {
         const states = { 1: '▶ Reproduciendo', 2: '⏸ Pausado', 0: '■ Terminado' };
         if (states[e.data]) log(states[e.data], 'recv');
-        // Sincronizar botón unificado
         if (e.data === YT.PlayerState.PLAYING) setPlayingState(true);
         if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) setPlayingState(false);
-        if (e.data === 0 && queue.length > 1) {
+        if (e.data === 0 && queue.length > 1) setTimeout(cmdNext, 1500);
+      },
+      onError(e) {
+        log('⚠️ Error YouTube: ' + e.data, 'warn');
+        // Códigos: 2=ID inválido, 5=HTML5 error, 100=no encontrado, 101/150=embed no permitido
+        if (e.data === 100 || e.data === 101 || e.data === 150) {
+          showToast('⚠️ Video no disponible — saltando...');
           setTimeout(cmdNext, 1500);
         }
       }
