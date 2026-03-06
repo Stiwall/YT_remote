@@ -2045,6 +2045,17 @@ input[type=range]::-webkit-slider-thumb:hover {
     <p>Controla YouTube desde cualquier dispositivo</p>
   </div>
 
+  <div id="origin-warning" style="display:none;background:rgba(255,60,0,0.2);border:2px solid rgba(255,80,0,0.7);border-radius:10px;padding:16px;margin-bottom:12px;font-size:0.85rem;line-height:1.7;">
+    🚨 <strong style="color:#ff6622;font-size:0.95rem;">La app NO puede conectar desde aquí</strong><br>
+    Estás abriendo el archivo desde <strong>WhatsApp / Telegram / archivo local</strong>.<br>
+    WebRTC (la tecnología de conexión) requiere <strong>HTTPS</strong>.<br><br>
+    <strong>✅ Solución gratuita en 1 minuto:</strong><br>
+    1. Descarga el archivo <code>.html</code> a tu teléfono/PC<br>
+    2. Ve a <a href="https://app.netlify.com/drop" target="_blank" style="color:#ff9900;font-weight:bold;text-decoration:underline">netlify.com/drop ↗</a><br>
+    3. Arrastra el archivo ahí<br>
+    4. Usa la URL que te da Netlify en <strong>todos</strong> los dispositivos<br><br>
+    <a href="https://app.netlify.com/drop" target="_blank" style="display:inline-block;background:#ff9900;color:#000;padding:8px 16px;border-radius:6px;font-weight:bold;text-decoration:none;">📤 Ir a Netlify Drop →</a>
+  </div>
   <div class="info-box" style="margin-bottom: 0;">
     <strong>Funciona entre dispositivos:</strong> Abre esta página en cualquier dispositivo con el mismo código. Una como <strong>Pantalla</strong> y otra como <strong>Control</strong>.
   </div>
@@ -2387,6 +2398,16 @@ input[type=range]::-webkit-slider-thumb:hover {
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
+
+// Detectar origen inseguro (file:// o content://)
+(function() {
+  const proto = location.protocol;
+  if (proto === 'file:' || proto === 'content:' || 
+      (proto === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')) {
+    const w = document.getElementById('origin-warning');
+    if (w) w.style.display = 'block';
+  }
+})();
 
 // API key ofuscada - no modificar
 (function(){
@@ -2767,15 +2788,32 @@ function initPeer() {
   });
 
   peer.on('disconnected', () => {
+    // Solo reconectar al servidor de señalización — NO destruir el peer
+    // Las conexiones WebRTC P2P ya establecidas siguen funcionando sin el servidor
     _reconnects++;
-    if (_reconnects > 4) {
+    log('🔌 Señalización perdida — reconectando...', 'warn');
+
+    if (_reconnects > 6) {
+      // Demasiados fallos: cambiar servidor y recrear
       currentServerIndex = (currentServerIndex + 1) % SERVERS.length;
       _reconnects = 0;
-      setTimeout(initPeer, 2000);
+      // Solo recrear si no hay conexiones activas
+      const hasActive = mode === 'host' ? peerConns.size > 0 : (peerConn && peerConn.open);
+      if (!hasActive) setTimeout(initPeer, 2000);
     } else {
-      setTimeout(() => { if (peer && !peer.destroyed) peer.reconnect(); }, 1500 * _reconnects);
+      // Intentar reconectar al servidor de señalización sin destruir conexiones
+      setTimeout(() => {
+        if (peer && !peer.destroyed) {
+          try { peer.reconnect(); }
+          catch(e) { if (!hasActive()) setTimeout(initPeer, 2000); }
+        }
+      }, Math.min(1000 * _reconnects, 8000));
     }
   });
+
+  function hasActive() {
+    return mode === 'host' ? peerConns.size > 0 : (peerConn && peerConn.open);
+  }
 }
 
 function connectToHost() {
