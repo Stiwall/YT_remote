@@ -2288,19 +2288,19 @@ input[type=range]::-webkit-slider-thumb:hover {
     <!-- Room Status -->
     <div class="panel status-card">
 
-      <!-- ── Fila superior: título + botón salir ── -->
-      <div class="panel-header" style="justify-content:space-between; margin-bottom:12px;">
+      <!-- Fila superior: título + botones -->
+      <div class="panel-header" style="justify-content:space-between;margin-bottom:12px;">
         <div class="panel-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Sala
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button class="btn-small btn-dark-sm" onclick="newRoom()" title="Nueva sala" style="display:flex;align-items:center;gap:6px;padding:8px 14px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <div style="display:flex;gap:6px;">
+          <button onclick="newRoom()" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:var(--panel-2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);font-size:0.8rem;font-weight:600;cursor:pointer;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nueva
           </button>
-          <button class="btn-small" onclick="leaveRoom()" title="Salir de la sala" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(255,0,0,0.12);border:1px solid rgba(255,0,0,0.3);color:var(--red);border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:all 0.2s;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <button onclick="leaveRoom()" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:rgba(255,50,50,0.12);border:1px solid rgba(255,50,50,0.35);color:#ff5555;border-radius:var(--radius-sm);font-size:0.8rem;font-weight:600;cursor:pointer;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Salir
           </button>
         </div>
@@ -2314,81 +2314,58 @@ input[type=range]::-webkit-slider-thumb:hover {
       </div>
 
       <div class="copy-hint" style="display:flex;align-items:center;justify-content:center;gap:6px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Toca para copiar el código
       </div>
 
       <!-- QR Code -->
       <div class="qr-section" id="qr-section" style="display:none">
-        <div class="qr-divider">
-          <span>Escanea para conectar</span>
-        </div>
+        <div class="qr-divider"><span>Escanea para conectar</span></div>
         <div class="qr-wrapper">
           <div id="qr-canvas"></div>
           <div class="qr-label">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
             Abre en modo Control
           </div>
         </div>
         <button class="qr-toggle-btn" onclick="toggleQR(false)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           Ocultar QR
         </button>
       </div>
 
-      <button class="btn-secondary qr-show-btn" id="qr-show-btn" onclick="toggleQR(true)" style="display:none; width:100%; margin-bottom:8px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="19" y="18" width="2" height="3"/><rect x="14" y="19" width="3" height="2"/></svg>
+      <button class="btn-secondary qr-show-btn" id="qr-show-btn" onclick="toggleQR(true)" style="display:none;width:100%;margin-bottom:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/></svg>
         Mostrar QR para conectar
       </button>
 
       <div class="room-info" id="room-meta"></div>
-
     </div>
 
     <!-- Modal Nueva Sala -->
-    <div id="new-room-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;align-items:center;justify-content:center;padding:20px;">
-      <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:28px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);">
-        <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:6px;">Nueva Sala</h3>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;">Elige el modo y escribe o genera un código de sala nuevo.</p>
-
-        <!-- Selector de modo -->
-        <div class="mode-selector" style="margin-bottom:16px;">
-          <button class="mode-btn active" id="new-mode-host" onclick="setNewRoomMode('host')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-            Pantalla
+    <div id="new-room-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:900;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeNewRoomModal()">
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-width:360px;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px;">Nueva Sala</h3>
+        <div class="mode-selector" style="margin-bottom:14px;">
+          <button class="mode-btn active" id="nm-host" onclick="setNewRoomMode('host')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Pantalla
           </button>
-          <button class="mode-btn" id="new-mode-remote" onclick="setNewRoomMode('remote')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
-            Control
+          <button class="mode-btn" id="nm-remote" onclick="setNewRoomMode('remote')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg> Control
           </button>
         </div>
-
-        <div class="input-group" style="margin-bottom:12px;">
-          <label>Código de Sala</label>
-          <div style="display:flex;gap:8px;">
-            <div class="input-wrapper" style="flex:1;">
-              <input id="new-room-input" type="text" placeholder="EJ: CASA1" maxlength="10"
-                style="width:100%;background:var(--darker);border:2px solid var(--border);color:var(--text);font-size:1.1rem;font-weight:700;padding:12px 16px;border-radius:var(--radius);outline:none;text-transform:uppercase;letter-spacing:3px;text-align:center;"
-                onkeydown="if(event.key==='Enter')confirmNewRoom()">
-            </div>
-            <button class="btn-small btn-dark-sm" onclick="genNewCode()" style="padding:12px 14px;white-space:nowrap;">🎲</button>
-          </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input id="nm-code" type="text" placeholder="CÓDIGO" maxlength="10" onkeydown="if(event.key==='Enter')confirmNewRoom()"
+            style="flex:1;background:var(--darker);border:2px solid var(--border);color:var(--text);font-size:1.1rem;font-weight:700;padding:10px;border-radius:var(--radius);text-transform:uppercase;letter-spacing:3px;text-align:center;">
+          <button onclick="genNewCode()" style="padding:10px 14px;background:var(--panel-2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);cursor:pointer;font-size:1.1rem;">🎲</button>
         </div>
-
-        <div class="input-group" style="margin-bottom:20px;">
-          <label>Contraseña (opcional)</label>
-          <div class="password-row">
-            <span class="lock-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-            <input id="new-room-password" type="password" placeholder="Deja vacío para sala pública" maxlength="32">
-          </div>
+        <div class="password-row" style="margin-bottom:18px;">
+          <span class="lock-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input id="nm-pass" type="password" placeholder="Contraseña (opcional)" maxlength="32">
         </div>
-
-        <div style="display:flex;gap:10px;">
-          <button class="btn-secondary" onclick="closeNewRoomModal()" style="flex:1;">Cancelar</button>
-          <button class="btn-primary" onclick="confirmNewRoom()" style="flex:2;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            Entrar
-          </button>
+        <div style="display:flex;gap:8px;">
+          <button onclick="closeNewRoomModal()" class="btn-secondary" style="flex:1;">Cancelar</button>
+          <button onclick="confirmNewRoom()" class="btn-primary" style="flex:2;">Entrar</button>
         </div>
       </div>
     </div>
@@ -2423,44 +2400,7 @@ input[type=range]::-webkit-slider-thumb:hover {
    CONFIGURACIÓN - Servidores PeerJS
    ═══════════════════════════════════════════════════════ */
 
-// ICE servers completos: STUN para misma red + TURN para NAT diferente red
-const ICE_SERVERS = [
-  // STUN — descubrimiento de IP pública (misma red y diferente red)
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun3.l.google.com:19302' },
-  { urls: 'stun:stun4.l.google.com:19302' },
-  { urls: 'stun:stun.cloudflare.com:3478' },
-  { urls: 'stun:global.stun.twilio.com:3478' },
-  { urls: 'stun:stun.services.mozilla.com:3478' },
-  // TURN — relay para redes con NAT estricto o diferente red (crítico para móvil ↔ PC)
-  {
-    urls: [
-      'turn:openrelay.metered.ca:80',
-      'turn:openrelay.metered.ca:443',
-      'turn:openrelay.metered.ca:443?transport=tcp'
-    ],
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
-  },
-  {
-    urls: 'turn:relay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
-  },
-  {
-    urls: 'turn:relay.metered.ca:443',
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
-  },
-  {
-    urls: 'turn:relay.metered.ca:443?transport=tcp',
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
-  }
-];
-
+// Servidores PeerJS compatibles (en orden de preferencia)
 const SERVERS = [
   {
     name: 'PeerJS Cloud',
@@ -2468,7 +2408,26 @@ const SERVERS = [
     port: 443,
     path: '/',
     secure: true,
-    config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'all', iceCandidatePoolSize: 10 }
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:openrelay.metered.ca:80' },
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ]
+    }
   },
   {
     name: 'PeerJS Cloud #2',
@@ -2476,7 +2435,18 @@ const SERVERS = [
     port: 443,
     path: '/',
     secure: true,
-    config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'relay' } // fuerza TURN cuando STUN falla
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.cloudflare.com:3478' },
+        { urls: 'stun:global.stun.twilio.com:3478' },
+        { urls: 'stun:stun.l.google.com:19302' },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ]
+    }
   }
 ];
 
@@ -2572,123 +2542,87 @@ function setMode(m) {
     const isActive = (i === 0 && m === 'host') || (i === 1 && m === 'remote');
     btn.classList.toggle('active', isActive);
   });
-  
   const iconEl = document.getElementById('device-icon');
   if (iconEl) {
-    if (m === 'host') {
-      iconEl.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`;
-    } else {
-      iconEl.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>`;
-    }
+    iconEl.innerHTML = m === 'host'
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>`;
   }
-  const deviceText = m === 'host' ? 'Pantalla' : 'Control';
-  document.getElementById('device-text').textContent = deviceText;
+  document.getElementById('device-text').textContent = m === 'host' ? 'Pantalla' : 'Control';
+  // Ocultar tab Player cuando es Control (no tiene reproductor)
+  const tabP = document.getElementById('tab-btn-player');
+  if (tabP) tabP.style.display = m === 'host' ? '' : 'none';
 }
 
 /* ═══════════════════════════════════════════════════════
-   NUEVA SALA (sin recargar)
+   GENERAR CÓDIGO
    ═══════════════════════════════════════════════════════ */
-let _newRoomMode = 'host';
+/* ── Nueva Sala (sin recargar) ── */
+let _nmMode = 'host';
 
 function newRoom() {
-  // Pre-rellenar con el modo actual y un código nuevo
-  _newRoomMode = mode;
-  setNewRoomMode(_newRoomMode);
+  _nmMode = mode;
+  setNewRoomMode(_nmMode);
   genNewCode();
-  document.getElementById('new-room-password').value = '';
-  const modal = document.getElementById('new-room-modal');
-  modal.style.display = 'flex';
+  document.getElementById('nm-pass').value = '';
+  document.getElementById('new-room-modal').style.display = 'flex';
 }
-
 function closeNewRoomModal() {
   document.getElementById('new-room-modal').style.display = 'none';
 }
-
 function setNewRoomMode(m) {
-  _newRoomMode = m;
-  document.getElementById('new-mode-host').classList.toggle('active', m === 'host');
-  document.getElementById('new-mode-remote').classList.toggle('active', m === 'remote');
+  _nmMode = m;
+  document.getElementById('nm-host').classList.toggle('active', m === 'host');
+  document.getElementById('nm-remote').classList.toggle('active', m === 'remote');
 }
-
 function genNewCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  document.getElementById('new-room-input').value = code;
+  let c = '';
+  for (let i = 0; i < 5; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById('nm-code').value = c;
 }
-
 function confirmNewRoom() {
-  const code = document.getElementById('new-room-input').value.trim().toUpperCase();
+  const code = (document.getElementById('nm-code').value || '').trim().toUpperCase();
   if (!code) { showToast('⚠️ Escribe un código'); return; }
-
-  // BUG FIX: leer contraseña ANTES de cerrar/limpiar el modal
-  const newPassword = document.getElementById('new-room-password').value.trim();
+  const pass = document.getElementById('nm-pass').value.trim();
   closeNewRoomModal();
 
-  // Limpiar sala actual sin mostrar setup screen
-  clearInterval(loopTimer);
+  // Limpiar sala actual
+  clearInterval(loopTimer); loopTimer = null;
   if (bc) { bc.close(); bc = null; }
-  peerConns.forEach(conn => { try { conn.close(); } catch(e) {} });
+  peerConns.forEach(c => { try { c.close(); } catch(e) {} });
   peerConns.clear();
   if (peerConn) { try { peerConn.close(); } catch(e) {} peerConn = null; }
   if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
   if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; ytReady = false; }
+  _connecting = false; _reconnects = 0;
 
-  // Resetear estado
   queue = []; qIdx = -1; nowId = null;
-  _peerReady = false;
-  _connectingInProgress = false;
-  _hostConnAttempts = 0;
-  _reconnectCount = 0;
-  _useRelay = false;
-  _clearConnectTimer();
   document.getElementById('log').innerHTML = '';
   document.getElementById('now-title').textContent = '—';
   document.getElementById('placeholder').style.display = 'flex';
   document.getElementById('prog-fill').style.width = '0%';
   document.getElementById('t-cur').textContent = '0:00';
   document.getElementById('t-dur').textContent = '0:00';
-  renderQ();
-  setPlayingState(false);
+  renderQ(); setPlayingState(false);
 
-  // Aplicar nuevo modo y código
-  setMode(_newRoomMode);
-  mode = _newRoomMode;
+  setMode(_nmMode);
   roomCode = code;
-  roomPassword = newPassword;
+  roomPassword = pass;
 
-  // Ocultar/mostrar host panel
-  document.getElementById('host-panel').style.display = mode === 'host' ? 'block' : 'none';
+  document.getElementById('host-panel').style.display = _nmMode === 'host' ? 'block' : 'none';
+  document.getElementById('code-display').querySelector('.room-code-text').textContent = code;
+  document.getElementById('room-meta').innerHTML =
+    `<strong>Modo:</strong> ${_nmMode === 'host' ? 'Pantalla' : 'Control'}<br><strong>Sala:</strong> ${code}${pass?' 🔒':''}<br><strong>Sinc:</strong> Multi-dispositivo`;
 
-  // Actualizar UI de sala
-  document.getElementById('code-display').querySelector('.room-code-text').textContent = roomCode;
-  const lockIcon = roomPassword ? ' 🔒' : '';
-  document.getElementById('room-meta').innerHTML = `
-    <strong>Modo:</strong> ${mode === 'host' ? 'Pantalla' : 'Control'}<br>
-    <strong>Sala:</strong> ${roomCode}${lockIcon}<br>
-    <strong>Sinc:</strong> Multi-dispositivo
-  `;
+  if (_nmMode === 'host') { showTab('tab-player'); showQRButton(); toggleQR(false); }
+  else { showTab('tab-controls'); document.getElementById('qr-show-btn').style.display = 'none'; }
 
-  if (mode === 'host') {
-    showTab('tab-player');
-    showQRButton();
-    // Ocultar QR anterior
-    toggleQR(false);
-  } else {
-    showTab('tab-controls');
-    document.getElementById('qr-show-btn').style.display = 'none';
-  }
-
-  saveSession?.();
   initComms();
   startLoop();
-  showToast(`🆕 Nueva sala: ${roomCode}`);
+  showToast('🆕 Nueva sala: ' + code);
 }
 
-// Cerrar modal al tocar fuera
-document.getElementById('new-room-modal')?.addEventListener('click', function(e) {
-  if (e.target === this) closeNewRoomModal();
-});
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -2738,231 +2672,121 @@ function joinRoom() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   COMUNICACIÓN — BroadcastChannel + PeerJS WebRTC
+   INICIALIZAR COMUNICACIÓN
+   BroadcastChannel para misma pestaña (instantáneo)
+   + PeerJS WebRTC para dispositivos remotos
    ═══════════════════════════════════════════════════════ */
-
-// IDs deterministas
-function makeHostId(code) { return 'ytrem-' + code.toLowerCase() + '-host'; }
-function makeRemoteId(code) { return 'ytrem-' + code.toLowerCase() + '-r-' + Math.random().toString(36).slice(2,7); }
-
-// Estado de conexión centralizado
-let _peerReady       = false;   // el peer está registrado en el servidor
-let _connectTimer    = null;    // único timer de reconexión activo
-let _reconnectCount  = 0;       // intentos de reconexión al servidor PeerJS
-let _hostConnAttempts = 0;      // intentos de llegar al host (solo remote)
-let _useRelay        = false;   // forzar TURN después de varios fallos
-
-function _clearConnectTimer() {
-  if (_connectTimer) { clearTimeout(_connectTimer); _connectTimer = null; }
-}
-
 function initComms() {
-  // BroadcastChannel — misma pestaña/navegador (instantáneo, sin WebRTC)
   try {
     if (bc) { bc.close(); bc = null; }
     bc = new BroadcastChannel('ytrem:' + roomCode);
     bc.onmessage = (e) => handleMessage(e.data);
   } catch(e) {}
-
-  _peerReady = false;
-  _connectTimer = null;
-  _reconnectCount = 0;
-  _hostConnAttempts = 0;
-  _useRelay = false;
-  currentServerIndex = 0;
   initPeer();
 }
 
+function makeHostId(code) { return 'ytrem-' + code.toLowerCase() + '-host'; }
+function makeRemoteId(code) { return 'ytrem-' + code.toLowerCase() + '-r-' + Math.random().toString(36).slice(2,7); }
+
+let _reconnects = 0;
+let _connecting = false; // guard: evita intentos paralelos de connectToHost
+
 function initPeer() {
-  // Destruir peer anterior limpiamente
-  if (peer) {
-    peer.removeAllListeners?.();
-    try { peer.destroy(); } catch(e) {}
-    peer = null;
-  }
-  _peerReady = false;
-  _clearConnectTimer();
+  _connecting = false;
+  if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
+  if (!roomCode) return;
+  setStatus('syncing', 'Conectando...');
 
-  if (!roomCode) return; // ya salimos
-
-  const srv = _useRelay ? SERVERS[1] : SERVERS[0];
+  const srv = SERVERS[currentServerIndex];
   const myId = mode === 'host' ? makeHostId(roomCode) : makeRemoteId(roomCode);
-
-  log(`🔌 Conectando al servidor… (${_useRelay ? 'relay' : 'directo'})`, 'info');
-  console.log('[Peer] ID:', myId);
+  log('🔌 ' + srv.name + ' | ID: ' + myId.slice(-12), 'info');
 
   try { peer = new Peer(myId, srv); }
-  catch(e) { log('❌ Error creando Peer: ' + e.message, 'warn'); _scheduleReconnect(5000); return; }
+  catch(e) { log('❌ ' + e.message, 'warn'); setTimeout(initPeer, 4000); return; }
 
-  // ── Timeout inicial de señalización ──────────────────
-  const sigTimeout = setTimeout(() => {
-    if (!_peerReady) {
-      log('⏱️ Sin respuesta del servidor, reintentando...', 'warn');
-      _scheduleReconnect(3000);
-    }
-  }, 15000);
+  // Timeout si el servidor no responde
+  const sigT = setTimeout(() => {
+    if (!peer?.id) { try { peer?.destroy(); } catch(e) {} setTimeout(initPeer, 3000); }
+  }, 12000);
 
-  // ── open: peer registrado en el servidor ─────────────
   peer.on('open', (id) => {
-    clearTimeout(sigTimeout);
-    _peerReady = true;
-    _reconnectCount = 0;
-    log('✅ Servidor OK — ID: ' + id, 'info');
-    console.log('[Peer] open:', id);
-
+    clearTimeout(sigT);
+    _reconnects = 0;
+    log('✅ Conectado al servidor', 'info');
     if (mode === 'host') {
       setStatus('connected', 'Esperando control...');
-      showToast('📺 Sala lista — Código: ' + roomCode);
+      showToast('📺 Sala lista — ' + roomCode);
     } else {
-      // ÚNICA llamada a connectToHost; el guard interno previene duplicados
-      _scheduleConnectToHost(200);
+      connectToHost();
     }
   });
 
-  // ── connection: alguien se conecta a nosotros (host) ─
   peer.on('connection', (conn) => {
-    if (mode !== 'host') return; // el control nunca recibe conexiones entrantes
+    if (mode !== 'host') return;
     const meta = conn.metadata || {};
     if (roomPassword && meta.password !== roomPassword) {
       conn.on('open', () => {
-        try { conn.send({ type: 'auth-rejected', reason: 'Contraseña incorrecta' }); } catch(e) {}
-        setTimeout(() => { try { conn.close(); } catch(e) {} }, 500);
+        try { conn.send({ type: 'auth-rejected' }); } catch(e) {}
+        setTimeout(() => { try { conn.close(); } catch(e) {} }, 400);
       });
-      log('🚫 Conexión rechazada: contraseña incorrecta', 'warn');
+      log('🚫 Rechazado: contraseña', 'warn');
       return;
     }
-    // Evitar duplicados: si ya existe conexión de este peer, cerrar la vieja
+    // Cerrar conexión anterior del mismo peer si existe
     if (peerConns.has(conn.peer)) {
       try { peerConns.get(conn.peer).close(); } catch(e) {}
-      peerConns.delete(conn.peer);
     }
     setupConn(conn);
-    // Enviar estado actual al control recién conectado
-    conn.on('open', () => {
-      const n = peerConns.size;
-      log(`📱 Control #${n} conectado`, 'recv');
-      showToast(`📱 Control #${n} conectado`);
-      setStatus('connected', 'Conectado ✅');
-      setTimeout(() => broadcastState(), 300);
-    });
+    updateRemoteCount();
+    showToast('📱 Control #' + peerConns.size + ' conectado');
+    setTimeout(() => broadcastState(), 400);
   });
 
-  // ── error del peer/servidor ───────────────────────────
   peer.on('error', (err) => {
-    clearTimeout(sigTimeout);
-    // PeerJS expone el tipo en err.type, el mensaje puede variar por versión
-    const errType = err.type || '';
-    const errMsg  = (err.message || String(err)).toLowerCase();
-    console.error('[Peer] error type:', errType, '| msg:', errMsg);
-    log(`⚠️ ${errType || errMsg.substring(0,40)}`, 'warn');
+    clearTimeout(sigT);
+    const t = err.type || '';
+    const m = (err.message || '').toLowerCase();
+    log('⚠️ ' + (t || m.slice(0,35)), 'warn');
+    console.error('[Peer]', err);
 
-    if (errType === 'unavailable-id' || errType === 'peer-id-taken') {
-      // El host tiene ID ocupado — esperar a que la sesión anterior expire
-      log('⚠️ ID en uso, esperando liberación (8s)...', 'warn');
-      _scheduleReconnect(8000);
-    } else if (errType === 'peer-unavailable') {
-      // El host no está en línea todavía — reintentar con backoff
+    if (t === 'peer-unavailable' || m.includes('peer-unavailable') || m.includes('could not connect')) {
+      // Host no encontrado — solo aplica al control
       if (mode === 'remote') {
-        log('⏳ Pantalla no encontrada, reintentando...', 'info');
-        _hostConnAttempts++;
-        _scheduleConnectToHost(_backoffDelay(_hostConnAttempts));
+        setStatus('syncing', 'Esperando pantalla...');
+        setTimeout(() => { _connecting = false; connectToHost(); }, 4000);
       }
-    } else if (errType === 'network' || errType === 'server-error' ||
-               errType === 'socket-error' || errType === 'socket-closed' ||
-               errMsg.includes('websocket') || errMsg.includes('lost')) {
-      log('🔌 Error de red, reconectando...', 'warn');
-      _scheduleReconnect(3000);
+    } else if (t === 'unavailable-id' || t === 'peer-id-taken' || m.includes('is taken')) {
+      // ID ocupado: esperar y reintentar con el mismo ID
+      log('⚠️ ID en uso, reintentando en 6s...', 'warn');
+      setTimeout(initPeer, 6000);
     } else {
-      // Error desconocido — reconectar conservadoramente
-      _scheduleReconnect(5000);
+      // Error de red: rotar servidor
+      currentServerIndex = (currentServerIndex + 1) % SERVERS.length;
+      setTimeout(initPeer, 3000);
     }
   });
 
-  // ── disconnected del servidor (NO del peer remoto) ───
   peer.on('disconnected', () => {
-    _peerReady = false;
-    _reconnectCount++;
-    log(`🔌 Desconectado del servidor (${_reconnectCount})`, 'warn');
-
-    if (_reconnectCount >= 5) {
-      log('🔁 Demasiados intentos, cambiando configuración...', 'warn');
-      _useRelay = !_useRelay;
-      _reconnectCount = 0;
-      _scheduleReconnect(3000);
-      return;
+    _reconnects++;
+    if (_reconnects > 4) {
+      currentServerIndex = (currentServerIndex + 1) % SERVERS.length;
+      _reconnects = 0;
+      setTimeout(initPeer, 2000);
+    } else {
+      setTimeout(() => { if (peer && !peer.destroyed) peer.reconnect(); }, 1500 * _reconnects);
     }
-    // Intentar reconectar al servidor PeerJS (mantiene el ID)
-    const delay = Math.min(1500 * _reconnectCount, 8000);
-    setTimeout(() => {
-      if (peer && !peer.destroyed) {
-        try { peer.reconnect(); }
-        catch(e) { _scheduleReconnect(delay); }
-      }
-    }, delay);
-  });
-
-  peer.on('close', () => {
-    _peerReady = false;
-    log('🔌 Peer cerrado', 'warn');
   });
 }
-
-// ── Helpers de scheduling ─────────────────────────────
-function _backoffDelay(attempt) {
-  return Math.min(1500 * Math.pow(1.5, attempt - 1), 12000);
-}
-
-function _scheduleReconnect(delay) {
-  _clearConnectTimer();
-  if (!roomCode) return;
-  _connectTimer = setTimeout(initPeer, delay);
-}
-
-function _scheduleConnectToHost(delay) {
-  _clearConnectTimer();
-  if (!roomCode) return;
-  _connectTimer = setTimeout(connectToHost, delay);
-}
-
-// ── connectToHost: solo un intento activo a la vez ────
-let _connectingInProgress = false;
 
 function connectToHost() {
-  if (!roomCode) return;
-  if (peerConn && peerConn.open) return;       // ya conectado
-  if (_connectingInProgress) return;            // ya hay un intento en curso
-  if (!peer || !_peerReady) {
-    // Peer no listo aún — esperar sin contar como intento
-    _scheduleConnectToHost(1000);
-    return;
-  }
+  if (!roomCode || !peer || !peer.id) return;
+  if (peerConn && peerConn.open) return; // ya conectado
+  if (_connecting) return;               // ya hay un intento activo
+  _connecting = true;
 
-  _connectingInProgress = true;
-  _hostConnAttempts++;
   const hostId = makeHostId(roomCode);
-  const delay  = _backoffDelay(_hostConnAttempts);
-
-  if (_hostConnAttempts === 1) log('🔌 Buscando pantalla: ' + hostId, 'info');
-  else log(`🔄 Intento ${_hostConnAttempts} (${Math.round(delay/1000)}s backoff)...`, 'info');
   setStatus('syncing', 'Buscando pantalla...');
-
-  // Cambiar a relay después de 5 intentos fallidos
-  if (_hostConnAttempts === 5 && !_useRelay) {
-    log('🔁 Activando TURN relay para NAT estricto...', 'info');
-    _useRelay = true;
-    _connectingInProgress = false;
-    _scheduleReconnect(500);
-    return;
-  }
-
-  if (_hostConnAttempts > 15) {
-    _connectingInProgress = false;
-    _hostConnAttempts = 0;
-    setStatus('disconnected', 'Pantalla no encontrada');
-    log('❌ No se pudo conectar. Verifica el código.', 'warn');
-    showToast('❌ Pantalla no encontrada — verifica el código');
-    return;
-  }
+  log('🔌 Conectando a: ' + hostId.slice(-12), 'info');
 
   let conn;
   try {
@@ -2972,104 +2796,82 @@ function connectToHost() {
       metadata: { role: 'remote', room: roomCode, password: roomPassword }
     });
   } catch(e) {
-    _connectingInProgress = false;
-    log('❌ No se pudo crear conexión: ' + e.message, 'warn');
-    _scheduleConnectToHost(delay);
+    _connecting = false;
+    log('❌ ' + e.message, 'warn');
+    setTimeout(connectToHost, 3000);
     return;
   }
 
-  // Timeout si el handshake WebRTC tarda demasiado
   const t = setTimeout(() => {
     if (!conn.open) {
-      _connectingInProgress = false;
+      _connecting = false;
       try { conn.close(); } catch(e) {}
-      log('⏱️ Timeout WebRTC — reintentando...', 'warn');
-      _scheduleConnectToHost(delay);
+      log('⏱️ Timeout — reintentando...', 'warn');
+      setTimeout(connectToHost, 4000);
     }
   }, 10000);
 
   conn.on('open', () => {
     clearTimeout(t);
-    _connectingInProgress = false;
-    _hostConnAttempts = 0;
+    _connecting = false;
     setupConn(conn);
     setStatus('connected', 'Conectado ✅');
-    log('✅ ¡Conectado a la pantalla!', 'recv');
+    log('✅ Conectado a la pantalla', 'recv');
     showToast('✅ Conectado a la pantalla');
     conn.send({ type: 'request-state' });
   });
 
   conn.on('error', (e) => {
     clearTimeout(t);
-    _connectingInProgress = false;
-    const errType = e.type || '';
-    log(`⚠️ Error WebRTC: ${errType || (e.message||'').substring(0,30)}`, 'warn');
-    _scheduleConnectToHost(delay);
+    _connecting = false;
+    log('⚠️ Error WebRTC: ' + (e.type || e.message || ''), 'warn');
+    setTimeout(connectToHost, 3000);
   });
 }
 
-// ── setupConn: registrar eventos de una conexión activa ─
 function setupConn(conn) {
-  const connId = conn.peer;
+  const id = conn.peer;
+  if (mode === 'host') { peerConns.set(id, conn); }
+  else { peerConn = conn; }
 
-  if (mode === 'host') {
-    peerConns.set(connId, conn);
-    updateRemoteCount();
-  } else {
-    peerConn = conn;
-  }
-
-  // Keep-alive: ping cada 5s, detectar silencio prolongado
-  let lastPong = Date.now();
   const ka = setInterval(() => {
-    if (!conn.open) { clearInterval(ka); return; }
-    try { conn.send({ type: 'ping', t: Date.now() }); } catch(e) { clearInterval(ka); return; }
-    if (mode === 'remote' && Date.now() - lastPong > 20000) {
-      log('💀 Host sin respuesta 20s, reconectando...', 'warn');
-      clearInterval(ka);
-      try { conn.close(); } catch(e) {}
-    }
+    if (conn.open) {
+      try { conn.send({ type: 'ping' }); } catch(e) { clearInterval(ka); }
+    } else { clearInterval(ka); }
   }, 5000);
 
   conn.on('data', (data) => {
-    if (!data || !data.type) return;
-    if (data.type === 'ping') {
-      if (mode === 'host') try { conn.send({ type: 'pong', t: Date.now() }); } catch(e) {}
-      return;
-    }
-    if (data.type === 'pong') { lastPong = Date.now(); return; }
+    if (!data?.type) return;
+    if (data.type === 'ping') { if (mode === 'host') try { conn.send({ type: 'pong' }); } catch(e) {} return; }
+    if (data.type === 'pong') return;
     handleMessage(data);
   });
 
   conn.on('close', () => {
     clearInterval(ka);
     if (mode === 'host') {
-      peerConns.delete(connId);
+      peerConns.delete(id);
       updateRemoteCount();
-      log(`🔌 Control desconectado (${peerConns.size} restantes)`, 'warn');
+      log('🔌 Control desconectado (' + peerConns.size + ' restantes)', 'warn');
     } else {
       peerConn = null;
-      _connectingInProgress = false;
-      _hostConnAttempts = 0;
+      _connecting = false;
       setStatus('disconnected', 'Desconectado');
-      log('🔌 Conexión perdida, reconectando...', 'warn');
       showToast('🔌 Conexión perdida — reconectando');
-      _scheduleConnectToHost(2000);
+      setTimeout(connectToHost, 2000);
     }
   });
 
   conn.on('error', (e) => {
     clearInterval(ka);
     if (mode === 'host') {
-      peerConns.delete(connId);
+      peerConns.delete(id);
       updateRemoteCount();
     } else {
       peerConn = null;
-      _connectingInProgress = false;
-      _hostConnAttempts = 0;
-      setStatus('disconnected', 'Error de conexión');
-      log('⚠️ Error conn: ' + (e.message || e.type || e), 'warn');
-      _scheduleConnectToHost(3000);
+      _connecting = false;
+      setStatus('disconnected', 'Error');
+      setTimeout(connectToHost, 2000);
     }
   });
 }
@@ -3134,12 +2936,8 @@ function leaveRoom() {
   queue = [];
   qIdx = -1;
   nowId = null;
-  _peerReady = false;
-  _connectingInProgress = false;
-  _hostConnAttempts = 0;
-  _reconnectCount = 0;
-  _useRelay = false;
-  _clearConnectTimer();
+  _connecting = false;
+  _reconnects = 0;
   
   if (ytPlayer) {
     try { ytPlayer.destroy(); } catch(e) {}
@@ -3185,20 +2983,18 @@ function showToast(msg) {
    LOOP PRINCIPAL
    ═══════════════════════════════════════════════════════ */
 function startLoop() {
-  // BUG FIX: limpiar siempre el timer anterior antes de crear uno nuevo
-  if (loopTimer) { clearInterval(loopTimer); loopTimer = null; }
-  let lastBroadcastSec = -1;
   loopTimer = setInterval(() => {
     if (mode !== 'host' || !ytPlayer || !ytReady) return;
+    
     const t = ytPlayer.getCurrentTime?.() || 0;
     const d = ytPlayer.getDuration?.() || 1;
+    
     document.getElementById('prog-fill').style.width = (d > 0 ? t / d * 100 : 0) + '%';
     document.getElementById('t-cur').textContent = fmt(t);
     document.getElementById('t-dur').textContent = fmt(d);
-    // BUG FIX: broadcast exactamente cada 2s usando variable dedicada (no t%2 que es float)
-    const currentSec = Math.floor(t);
-    if (currentSec !== lastBroadcastSec && currentSec % 2 === 0) {
-      lastBroadcastSec = currentSec;
+    
+    // Broadcast cada 2 segundos
+    if (Math.floor(t) % 2 === 0) {
       broadcastState();
     }
   }, 1000);
@@ -3510,8 +3306,12 @@ function urlToQueue() {
     })
     .catch(() => {})
     .finally(() => {
-      if (mode === 'host') qAdd(item, true);
-      else sendCmd('q-add', { item });
+      if (mode === 'host') {
+        qAdd(item, true);
+      } else {
+        qAdd(item, false);
+        sendCmd('q-add', { item });
+      }
       showToast('✓ Añadido a la cola');
     });
 }
@@ -3542,15 +3342,12 @@ function seekClick(e) {
    COLA (QUEUE)
    ═══════════════════════════════════════════════════════ */
 function qAdd(item, dobroadcast) {
+  if (queue.length >= MAX_Q) { showToast('⚠️ Cola llena (' + MAX_Q + ' videos)'); return; }
   queue.push(item);
-  log('+ Cola: ' + item.title.slice(0, 30), 'recv');
-  
-  if (dobroadcast) broadcastQueue();
+  log('+ Cola: ' + (item.title||'').slice(0,30), 'recv');
   renderQ();
-  
-  if (mode === 'host' && qIdx === -1) {
-    playQItem(0);
-  }
+  if (dobroadcast) broadcastQueue();
+  if (mode === 'host' && qIdx === -1) playQItem(0);
 }
 
 function qRemove(idx, dobroadcast) {
@@ -3898,8 +3695,14 @@ function renderResults(items) {
 }
 
 function addResultToQ(item) {
-  if (mode === 'host') qAdd(item, true);
-  else sendCmd('q-add', { item });
+  if (mode === 'host') {
+    qAdd(item, true);
+  } else {
+    // Agregar a cola local para feedback visual inmediato
+    qAdd(item, false);
+    // Enviar al host para que también lo agregue
+    sendCmd('q-add', { item });
+  }
 }
 
 function playResult(item) {
