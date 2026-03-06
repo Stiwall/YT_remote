@@ -2100,7 +2100,7 @@ input[type=range]::-webkit-slider-thumb:hover {
 
   <nav class="mobile-nav">
     <div class="mobile-nav-tabs">
-      <button class="mobile-tab active" onclick="showTab('tab-player')" id="tab-btn-player" style="display:none">
+      <button class="mobile-tab active" onclick="showTab('tab-player')" id="tab-btn-player">
         <span class="tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
         <span>Player</span>
       </button>
@@ -2287,10 +2287,22 @@ input[type=range]::-webkit-slider-thumb:hover {
 
     <!-- Room Status -->
     <div class="panel status-card">
-      <div class="panel-header" style="justify-content: center;">
+
+      <!-- ── Fila superior: título + botón salir ── -->
+      <div class="panel-header" style="justify-content:space-between; margin-bottom:12px;">
         <div class="panel-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Sala
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-small btn-dark-sm" onclick="newRoom()" title="Nueva sala" style="display:flex;align-items:center;gap:6px;padding:8px 14px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nueva
+          </button>
+          <button class="btn-small" onclick="leaveRoom()" title="Salir de la sala" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(255,0,0,0.12);border:1px solid rgba(255,0,0,0.3);color:var(--red);border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:all 0.2s;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Salir
+          </button>
         </div>
       </div>
 
@@ -2331,10 +2343,54 @@ input[type=range]::-webkit-slider-thumb:hover {
 
       <div class="room-info" id="room-meta"></div>
 
-      <button class="btn-secondary" onclick="leaveRoom()" style="width: 100%;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        <span>Salir de la Sala</span>
-      </button>
+    </div>
+
+    <!-- Modal Nueva Sala -->
+    <div id="new-room-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:28px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);">
+        <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:6px;">Nueva Sala</h3>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;">Elige el modo y escribe o genera un código de sala nuevo.</p>
+
+        <!-- Selector de modo -->
+        <div class="mode-selector" style="margin-bottom:16px;">
+          <button class="mode-btn active" id="new-mode-host" onclick="setNewRoomMode('host')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            Pantalla
+          </button>
+          <button class="mode-btn" id="new-mode-remote" onclick="setNewRoomMode('remote')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+            Control
+          </button>
+        </div>
+
+        <div class="input-group" style="margin-bottom:12px;">
+          <label>Código de Sala</label>
+          <div style="display:flex;gap:8px;">
+            <div class="input-wrapper" style="flex:1;">
+              <input id="new-room-input" type="text" placeholder="EJ: CASA1" maxlength="10"
+                style="width:100%;background:var(--darker);border:2px solid var(--border);color:var(--text);font-size:1.1rem;font-weight:700;padding:12px 16px;border-radius:var(--radius);outline:none;text-transform:uppercase;letter-spacing:3px;text-align:center;"
+                onkeydown="if(event.key==='Enter')confirmNewRoom()">
+            </div>
+            <button class="btn-small btn-dark-sm" onclick="genNewCode()" style="padding:12px 14px;white-space:nowrap;">🎲</button>
+          </div>
+        </div>
+
+        <div class="input-group" style="margin-bottom:20px;">
+          <label>Contraseña (opcional)</label>
+          <div class="password-row">
+            <span class="lock-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <input id="new-room-password" type="password" placeholder="Deja vacío para sala pública" maxlength="32">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button class="btn-secondary" onclick="closeNewRoomModal()" style="flex:1;">Cancelar</button>
+          <button class="btn-primary" onclick="confirmNewRoom()" style="flex:2;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Entrar
+          </button>
+        </div>
+      </div>
     </div>
 
     </div><!-- /tab-sala -->
@@ -2367,7 +2423,44 @@ input[type=range]::-webkit-slider-thumb:hover {
    CONFIGURACIÓN - Servidores PeerJS
    ═══════════════════════════════════════════════════════ */
 
-// Servidores PeerJS compatibles (en orden de preferencia)
+// ICE servers completos: STUN para misma red + TURN para NAT diferente red
+const ICE_SERVERS = [
+  // STUN — descubrimiento de IP pública (misma red y diferente red)
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  { urls: 'stun:stun.services.mozilla.com:3478' },
+  // TURN — relay para redes con NAT estricto o diferente red (crítico para móvil ↔ PC)
+  {
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp'
+    ],
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:relay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:relay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:relay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  }
+];
+
 const SERVERS = [
   {
     name: 'PeerJS Cloud',
@@ -2375,26 +2468,7 @@ const SERVERS = [
     port: 443,
     path: '/',
     secure: true,
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
-        { urls: 'stun:openrelay.metered.ca:80' },
-        {
-          urls: 'turn:openrelay.metered.ca:80',
-          username: 'openrelayproject',
-          credential: 'openrelayproject'
-        },
-        {
-          urls: 'turn:openrelay.metered.ca:443',
-          username: 'openrelayproject',
-          credential: 'openrelayproject'
-        }
-      ]
-    }
+    config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'all', iceCandidatePoolSize: 10 }
   },
   {
     name: 'PeerJS Cloud #2',
@@ -2402,18 +2476,7 @@ const SERVERS = [
     port: 443,
     path: '/',
     secure: true,
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.cloudflare.com:3478' },
-        { urls: 'stun:global.stun.twilio.com:3478' },
-        { urls: 'stun:stun.l.google.com:19302' },
-        {
-          urls: 'turn:openrelay.metered.ca:443',
-          username: 'openrelayproject',
-          credential: 'openrelayproject'
-        }
-      ]
-    }
+    config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'relay' } // fuerza TURN cuando STUN falla
   }
 ];
 
@@ -2509,11 +2572,7 @@ function setMode(m) {
     const isActive = (i === 0 && m === 'host') || (i === 1 && m === 'remote');
     btn.classList.toggle('active', isActive);
   });
-
-  // Mostrar tab Player solo en host
-  const tabPlayer = document.getElementById('tab-btn-player');
-  if (tabPlayer) tabPlayer.style.display = m === 'host' ? '' : 'none';
-
+  
   const iconEl = document.getElementById('device-icon');
   if (iconEl) {
     if (m === 'host') {
@@ -2527,8 +2586,104 @@ function setMode(m) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   GENERAR CÓDIGO
+   NUEVA SALA (sin recargar)
    ═══════════════════════════════════════════════════════ */
+let _newRoomMode = 'host';
+
+function newRoom() {
+  // Pre-rellenar con el modo actual y un código nuevo
+  _newRoomMode = mode;
+  setNewRoomMode(_newRoomMode);
+  genNewCode();
+  document.getElementById('new-room-password').value = '';
+  const modal = document.getElementById('new-room-modal');
+  modal.style.display = 'flex';
+}
+
+function closeNewRoomModal() {
+  document.getElementById('new-room-modal').style.display = 'none';
+}
+
+function setNewRoomMode(m) {
+  _newRoomMode = m;
+  document.getElementById('new-mode-host').classList.toggle('active', m === 'host');
+  document.getElementById('new-mode-remote').classList.toggle('active', m === 'remote');
+}
+
+function genNewCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById('new-room-input').value = code;
+}
+
+function confirmNewRoom() {
+  const code = document.getElementById('new-room-input').value.trim().toUpperCase();
+  if (!code) { showToast('⚠️ Escribe un código'); return; }
+
+  closeNewRoomModal();
+
+  // Limpiar sala actual sin mostrar setup screen
+  clearInterval(loopTimer);
+  if (bc) { bc.close(); bc = null; }
+  peerConns.forEach(conn => { try { conn.close(); } catch(e) {} });
+  peerConns.clear();
+  if (peerConn) { try { peerConn.close(); } catch(e) {} peerConn = null; }
+  if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
+  if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; ytReady = false; }
+
+  // Resetear estado
+  queue = []; qIdx = -1; nowId = null;
+  connectAttempts = 0;
+  currentServerIndex = 0;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('now-title').textContent = '—';
+  document.getElementById('placeholder').style.display = 'flex';
+  document.getElementById('prog-fill').style.width = '0%';
+  document.getElementById('t-cur').textContent = '0:00';
+  document.getElementById('t-dur').textContent = '0:00';
+  renderQ();
+  setPlayingState(false);
+
+  // Aplicar nuevo modo y código
+  const newPassword = document.getElementById('new-room-password').value.trim();
+  setMode(_newRoomMode);
+  mode = _newRoomMode;
+  roomCode = code;
+  roomPassword = newPassword;
+
+  // Ocultar/mostrar host panel
+  document.getElementById('host-panel').style.display = mode === 'host' ? 'block' : 'none';
+
+  // Actualizar UI de sala
+  document.getElementById('code-display').querySelector('.room-code-text').textContent = roomCode;
+  const lockIcon = roomPassword ? ' 🔒' : '';
+  document.getElementById('room-meta').innerHTML = `
+    <strong>Modo:</strong> ${mode === 'host' ? 'Pantalla' : 'Control'}<br>
+    <strong>Sala:</strong> ${roomCode}${lockIcon}<br>
+    <strong>Sinc:</strong> Multi-dispositivo
+  `;
+
+  if (mode === 'host') {
+    showTab('tab-player');
+    showQRButton();
+    // Ocultar QR anterior
+    toggleQR(false);
+  } else {
+    showTab('tab-controls');
+    document.getElementById('qr-show-btn').style.display = 'none';
+  }
+
+  saveSession?.();
+  initComms();
+  startLoop();
+  showToast(`🆕 Nueva sala: ${roomCode}`);
+}
+
+// Cerrar modal al tocar fuera
+document.getElementById('new-room-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeNewRoomModal();
+});
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -2573,17 +2728,6 @@ function joinRoom() {
     showTab('tab-controls');
   }
 
-  // Restaurar cola guardada si existe y la sala está vacía (solo host)
-  if (mode === 'host' && window._restoredQueue && window._restoredQueue.length && queue.length === 0) {
-    queue = window._restoredQueue;
-    qIdx  = window._restoredQIdx ?? -1;
-    renderQ();
-    showToast('📋 Cola restaurada (' + queue.length + ' videos)');
-    window._restoredQueue = null;
-    window._restoredQIdx  = null;
-  }
-
-  saveSession();
   initComms();
   startLoop();
 }
@@ -2775,54 +2919,85 @@ function attachPeerEvents(serverConfig) {
   });
 }
 
+let connectAttempts = 0;
+const MAX_CONNECT_ATTEMPTS = 12; // más intentos antes de rendirse
+
 function connectToHost() {
+  if (!roomCode) return; // ya salimos de la sala
   if (!peer || !peer.id) {
     log('⏳ Peer no listo, esperando...', 'info');
     setTimeout(connectToHost, 1500);
     return;
   }
 
+  connectAttempts++;
   const hostId = makeHostId(roomCode);
   setStatus('syncing', 'Buscando pantalla...');
-  log('🔌 Conectando a pantalla: ' + hostId, 'info');
-  
+
+  // Backoff exponencial: 2s, 3s, 4s... hasta 8s máximo
+  const delay = Math.min(2000 * Math.ceil(connectAttempts / 3), 8000);
+  if (connectAttempts > 1) {
+    log(`🔄 Intento ${connectAttempts}/${MAX_CONNECT_ATTEMPTS} (en ${delay/1000}s)...`, 'info');
+  } else {
+    log('🔌 Conectando a pantalla: ' + hostId, 'info');
+  }
+
+  // Si llevamos muchos intentos, forzar modo relay (TURN) para romper NAT
+  if (connectAttempts === 5) {
+    log('🔁 Cambiando a modo relay para mejor penetración NAT...', 'info');
+    currentServerIndex = 1; // servidor con iceTransportPolicy: 'relay'
+    try { peer.destroy(); } catch(e) {}
+    peer = null;
+    setTimeout(initPeer, 500);
+    return;
+  }
+
+  if (connectAttempts > MAX_CONNECT_ATTEMPTS) {
+    setStatus('disconnected', 'No se encontró la pantalla');
+    log('❌ No se pudo encontrar la pantalla. Verifica el código.', 'warn');
+    showToast('❌ Pantalla no encontrada — verifica el código');
+    connectAttempts = 0;
+    return;
+  }
+
   let conn;
   try {
-    conn = peer.connect(hostId, { 
-      reliable: true, 
+    conn = peer.connect(hostId, {
+      reliable: true,
       serialization: 'json',
       metadata: { role: mode, room: roomCode, password: roomPassword }
     });
   } catch(e) {
     log('❌ Error al crear conexión: ' + e.message, 'warn');
-    setTimeout(connectToHost, 2000);
+    setTimeout(connectToHost, delay);
     return;
   }
-  
-  // Timeout para la conexión
+
+  // Timeout adaptativo: más corto los primeros intentos, más largo los últimos
   const connTimeout = setTimeout(() => {
     if (!conn.open) {
-      log('⏱️ Timeout buscando pantalla', 'warn');
+      log('⏱️ Timeout — reintentando...', 'warn');
       try { conn.close(); } catch(e) {}
       setStatus('syncing', 'Reintentando...');
-      setTimeout(connectToHost, 2000);
+      setTimeout(connectToHost, delay);
     }
-  }, 8000);
-  
+  }, Math.min(5000 + connectAttempts * 1000, 12000));
+
   conn.on('open', () => {
     clearTimeout(connTimeout);
+    connectAttempts = 0;
     setupConn(conn);
     setStatus('connected', 'Conectado a pantalla ✅');
     log('✅ ¡Conectado a la pantalla!', 'recv');
     showToast('✅ Conectado a la pantalla');
     conn.send({ type: 'request-state' });
   });
-  
+
   conn.on('error', (e) => {
     clearTimeout(connTimeout);
     log('⚠️ Error de conexión: ' + (e.message || e), 'warn');
     setStatus('syncing', 'Reintentando...');
-    setTimeout(connectToHost, 3000);
+    setTimeout(connectToHost, delay);
   });
 }
 
@@ -2830,33 +3005,44 @@ function setupConn(conn) {
   const connId = conn.peer;
 
   if (mode === 'host') {
-    // Host: registrar en el mapa de conexiones múltiples
     peerConns.set(connId, conn);
     updateRemoteCount();
   } else {
-    // Remote: guardar la única conexión activa al host
     peerConn = conn;
   }
 
-  // Keep-alive: ping cada 5 segundos
+  // Keep-alive: ping cada 3s (antes era 5s) para detectar caídas más rápido
+  let missedPongs = 0;
   const keepAliveInterval = setInterval(() => {
     if (conn && conn.open) {
-      try { conn.send({ type: 'ping', time: Date.now() }); }
-      catch(e) { clearInterval(keepAliveInterval); }
+      try {
+        conn.send({ type: 'ping', time: Date.now() });
+        if (mode === 'remote') {
+          missedPongs++;
+          if (missedPongs >= 3) {
+            // 3 pings sin pong = conexión muerta
+            log('💀 Sin respuesta del host, reconectando...', 'warn');
+            clearInterval(keepAliveInterval);
+            try { conn.close(); } catch(e) {}
+          }
+        }
+      } catch(e) { clearInterval(keepAliveInterval); }
     } else {
       clearInterval(keepAliveInterval);
     }
-  }, 5000);
+  }, 3000);
 
   conn.on('data', (data) => {
     if (data && data.type === 'ping') {
-      // responder pong al remote para que sepa que el host sigue vivo
       if (mode === 'host') {
         try { conn.send({ type: 'pong', time: Date.now() }); } catch(e) {}
       }
       return;
     }
-    if (data && data.type === 'pong') return;
+    if (data && data.type === 'pong') {
+      missedPongs = 0; // host sigue vivo
+      return;
+    }
     handleMessage(data);
   });
 
@@ -2869,10 +3055,11 @@ function setupConn(conn) {
       if (peerConns.size === 0) setStatus('connected', 'Esperando control...');
     } else {
       peerConn = null;
+      connectAttempts = 0;
       setStatus('disconnected', 'Desconectado');
-      log('🔌 Conexión cerrada', 'warn');
-      showToast('🔌 Conexión perdida');
-      setTimeout(connectToHost, 2000);
+      log('🔌 Conexión cerrada, reconectando...', 'warn');
+      showToast('🔌 Conexión perdida — reconectando');
+      setTimeout(connectToHost, 1500);
     }
   });
 
@@ -2883,6 +3070,7 @@ function setupConn(conn) {
       updateRemoteCount();
     } else {
       peerConn = null;
+      connectAttempts = 0;
       setStatus('disconnected', 'Error de conexión');
       log('⚠️ Error: ' + (e.message || e), 'warn');
       setTimeout(connectToHost, 2000);
@@ -2950,6 +3138,8 @@ function leaveRoom() {
   queue = [];
   qIdx = -1;
   nowId = null;
+  connectAttempts = 0;
+  currentServerIndex = 0;
   
   if (ytPlayer) {
     try { ytPlayer.destroy(); } catch(e) {}
@@ -2963,7 +3153,6 @@ function leaveRoom() {
   document.getElementById('log').innerHTML = '';
   renderQ();
   
-  clearSession();
   showScreen('screen-setup');
   showToast('👋 Has salido de la sala');
 }
@@ -3356,7 +3545,6 @@ function qAdd(item, dobroadcast) {
   
   if (dobroadcast) broadcastQueue();
   renderQ();
-  saveSession();
   
   if (mode === 'host' && qIdx === -1) {
     playQItem(0);
@@ -3372,7 +3560,6 @@ function qRemove(idx, dobroadcast) {
   if (dobroadcast) broadcastQueue();
   log('- Cola: ' + removed.title.slice(0, 25), 'warn');
   renderQ();
-  saveSession();
 }
 
 function playQItem(idx) {
@@ -3780,70 +3967,8 @@ function h(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-/* ═══════════════════════════════════════════════════════
-   PERSISTENCIA - localStorage
-   ═══════════════════════════════════════════════════════ */
-const PERSIST_KEY = 'ytrem:session';
-
-function saveSession() {
-  try {
-    const data = {
-      mode,
-      roomCode,
-      queue,
-      qIdx,
-      vol: document.getElementById('vol-slider')?.value || 80
-    };
-    localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
-  } catch(e) {}
-}
-
-function loadSession() {
-  try {
-    const raw = localStorage.getItem(PERSIST_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch(e) { return null; }
-}
-
-function clearSession() {
-  try { localStorage.removeItem(PERSIST_KEY); } catch(e) {}
-}
-
-function restoreSession() {
-  const s = loadSession();
-  if (!s) return;
-
-  // Restaurar modo
-  if (s.mode) setMode(s.mode);
-
-  // Restaurar código de sala
-  if (s.roomCode) {
-    const input = document.getElementById('room-input');
-    if (input) input.value = s.roomCode;
-    showToast('💾 Última sala: ' + s.roomCode);
-  }
-
-  // Guardar cola restaurada para inyectar al entrar
-  if (s.queue && s.queue.length) {
-    window._restoredQueue = s.queue;
-    window._restoredQIdx  = s.qIdx ?? -1;
-  }
-
-  // Restaurar volumen
-  if (s.vol != null) {
-    const slider = document.getElementById('vol-slider');
-    const num    = document.getElementById('vol-num');
-    if (slider) slider.value = s.vol;
-    if (num)    num.textContent = s.vol + '%';
-  }
-}
-
 // Inicializar
 setMode('host');
-
-// Restaurar sesión previa
-restoreSession();
 
 /* ═══════════════════════════════════════════════════════
    PWA - SERVICE WORKER REGISTRATION
