@@ -797,7 +797,9 @@ footer a:hover { color: var(--text); }
   background: var(--border);
 }
 
-/* ── Teclado shortcuts visual ── */
+/* ── Misc ── */
+.desktop-br { display: none; }
+@media (min-width: 769px) { .desktop-br { display: block; } }
 .shortcuts-visual {
   display: flex;
   flex-wrap: wrap;
@@ -862,14 +864,18 @@ footer a:hover { color: var(--text); }
 
   /* Hero */
   .hero { padding: 100px 18px 60px; }
-  .hero h1 { letter-spacing: -1.5px; }
+  .hero h1 { font-size: 2rem; letter-spacing: -1px; line-height: 1.05; }
   .hero-sub { font-size: 0.92rem; margin-top: 18px; }
   .hero-actions { flex-direction: column; align-items: stretch; gap: 10px; margin-top: 28px; }
   .btn-hero { justify-content: center; padding: 14px 24px; font-size: 0.88rem; }
-  .hero-stats { gap: 16px; margin-top: 36px; flex-wrap: wrap; justify-content: center; }
-  .hero-stat-num { font-size: 1.2rem; }
-  .hero-stat-label { font-size: 0.62rem; }
-  .hero-mockup { margin-top: 48px; }
+
+  /* Stats — todos en fila, sin romper */
+  .hero-stats { gap: 0; margin-top: 36px; flex-wrap: nowrap; justify-content: center; width: 100%; }
+  .hero-stat { flex: 1; align-items: center; }
+  .hero-stat-num { font-size: 1.1rem; }
+  .hero-stat-label { font-size: 0.58rem; }
+  .hero-stat-divider { width: 1px; height: 28px; flex-shrink: 0; }
+  .hero-mockup { margin-top: 40px; }
 
   /* Mockup */
   .mockup-body { grid-template-columns: 1fr; }
@@ -912,9 +918,9 @@ footer a:hover { color: var(--text); }
 
 /* Extra pequeño — teléfonos muy estrechos */
 @media (max-width: 380px) {
-  .hero h1 { font-size: 1.9rem; letter-spacing: -1px; }
-  .hero-stats { gap: 12px; }
-  .hero-stat-divider { display: none; }
+  .hero h1 { font-size: 1.75rem; }
+  .hero-stat-num { font-size: 1rem; }
+  .hero-stat-label { font-size: 0.55rem; }
   .section-title { font-size: 1.5rem; }
   .cta-section h2 { font-size: 1.8rem; }
   .btn-hero { font-size: 0.84rem; padding: 13px 20px; }
@@ -950,7 +956,7 @@ footer a:hover { color: var(--text); }
     WebRTC · Sin instalación · 100% gratis
   </div>
 
-  <h1>Tu YouTube,<br>controlado desde<br><em>cualquier</em> dispositivo</h1>
+  <h1>Controla YouTube<br>desde <em>cualquier</em><br class="desktop-br"> dispositivo</h1>
 
   <p class="hero-sub">
     Pon YouTube en la pantalla grande y manéjalo desde el móvil.
