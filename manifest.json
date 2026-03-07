@@ -2,100 +2,27 @@
   "name": "YT Remote - Control Remoto YouTube",
   "short_name": "YT Remote",
   "description": "Controla YouTube desde cualquier dispositivo. Sincroniza tu pantalla con tu teléfono como control remoto.",
-  "start_url": "/?utm_source=pwa",
+  "start_url": "/app.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f0f0f",
   "theme_color": "#FF0000",
   "orientation": "portrait-primary",
-  "scope": "/",
-  "lang": "es",
-  "categories": ["entertainment", "utilities"],
   "icons": [
-    {
-      "src": "icons/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "screenshots/screen-host.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Pantalla Host"
-    },
-    {
-      "src": "screenshots/screen-remote.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Control Remoto"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Modo Pantalla",
-      "short_name": "Pantalla",
-      "description": "Abrir como pantalla host",
-      "url": "/?mode=host",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Modo Control",
-      "short_name": "Control",
-      "description": "Abrir como control remoto",
-      "url": "/?mode=remote",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
-    }
-  ]
+  "categories": ["entertainment", "utilities"],
+  "lang": "es",
+  "dir": "ltr"
 }

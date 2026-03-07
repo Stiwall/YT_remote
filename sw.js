@@ -1,164 +1,82 @@
-/* ═══════════════════════════════════════════════════════
-   YT Remote - Service Worker
-   Versión: 1.0.0
-   ═══════════════════════════════════════════════════════ */
-
-const CACHE_NAME = 'ytremote-v1';
-const CACHE_STATIC = 'ytremote-static-v1';
-
-// Archivos que se cachean al instalar (app shell)
-const STATIC_FILES = [
+// ═══════════════════════════════════════════════════════
+//  YT Remote — Service Worker
+// ═══════════════════════════════════════════════════════
+const CACHE_NAME  = 'ytremote-v3';
+const CACHE_URLS  = [
   '/',
   '/index.html',
+  '/app.html',
   '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable.png'
-];
-
-// URLs externas que también cacheamos
-const EXTERNAL_CACHE = [
+  'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js'
 ];
 
-/* ── INSTALL ── */
-self.addEventListener('install', (event) => {
-  console.log('[SW] Instalando v1...');
-  event.waitUntil(
-    caches.open(CACHE_STATIC).then((cache) => {
-      console.log('[SW] Cacheando archivos estáticos');
-      // Cachear archivos locales (crítico)
-      return cache.addAll(STATIC_FILES).then(() => {
-        // Cachear externos de forma opcional (no falla si no puede)
-        return Promise.allSettled(
-          EXTERNAL_CACHE.map(url => cache.add(url).catch(() => {}))
-        );
-      });
-    }).then(() => {
-      console.log('[SW] Instalación completa');
-      return self.skipWaiting();
-    })
+// Instalar — cachear recursos esenciales
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(CACHE_URLS))
+      .then(() => self.skipWaiting())
   );
 });
 
-/* ── ACTIVATE ── */
-self.addEventListener('activate', (event) => {
-  console.log('[SW] Activando...');
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
+// Activar — limpiar cachés viejos
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
         keys
-          .filter(key => key !== CACHE_STATIC && key !== CACHE_NAME)
-          .map(key => {
-            console.log('[SW] Eliminando caché antigua:', key);
-            return caches.delete(key);
-          })
-      );
-    }).then(() => {
-      console.log('[SW] Activo y controlando');
-      return self.clients.claim();
+          .filter(k => k !== CACHE_NAME)
+          .map(k => caches.delete(k))
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Fetch — cache first para assets, network first para el app
+self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+
+  // Siempre red para APIs externas (YouTube, PeerJS, búsqueda)
+  if (
+    url.hostname.includes('youtube') ||
+    url.hostname.includes('peerjs') ||
+    url.hostname.includes('googleapis') ||
+    url.hostname.includes('pipedapi') ||
+    url.hostname.includes('invidious') ||
+    url.hostname.includes('noembed') ||
+    url.hostname.includes('corsproxy')
+  ) {
+    return; // deja pasar sin interceptar
+  }
+
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request)
+        .then(res => {
+          // Cachear respuestas válidas de mismo origen
+          if (res.ok && url.origin === self.location.origin) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          }
+          return res;
+        })
+        .catch(() => {
+          // Offline fallback: devolver app.html para navegación
+          if (e.request.mode === 'navigate') {
+            return caches.match('/app.html') || caches.match('/index.html');
+          }
+        });
     })
   );
-
-  // Notificar a los clientes que hay una actualización
-  self.clients.matchAll().then(clients => {
-    clients.forEach(client => {
-      client.postMessage({ type: 'UPDATE_AVAILABLE' });
-    });
-  });
 });
 
-/* ── FETCH ── */
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Ignorar requests que no son GET
-  if (request.method !== 'GET') return;
-
-  // Ignorar la YouTube IFrame API (siempre necesita red)
-  if (url.hostname === 'www.youtube.com' || url.hostname === 'youtube.com') return;
-
-  // Ignorar PeerJS signaling (siempre necesita red)
-  if (url.hostname.includes('peerjs.com')) return;
-
-  // Ignorar noembed (siempre necesita red)
-  if (url.hostname === 'noembed.com') return;
-
-  // Ignorar thumbnails de YouTube
-  if (url.hostname === 'img.youtube.com') return;
-
-  // Estrategia: Cache First para estáticos, Network First para el resto
-  if (isStaticAsset(url)) {
-    event.respondWith(cacheFirst(request));
-  } else {
-    event.respondWith(networkFirst(request));
-  }
-});
-
-/* ── ESTRATEGIAS ── */
-
-// Cache First: usa caché si existe, si no va a red y cachea
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_STATIC);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch (err) {
-    return new Response('Recurso no disponible offline', { status: 503 });
-  }
-}
-
-// Network First: intenta red primero, cae a caché si falla
-async function networkFirst(request) {
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch (err) {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-
-    // Fallback: devolver index.html para navegación
-    if (request.mode === 'navigate') {
-      const fallback = await caches.match('/index.html');
-      if (fallback) return fallback;
-    }
-
-    return new Response('Sin conexión', { status: 503 });
-  }
-}
-
-function isStaticAsset(url) {
-  return (
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.css') ||
-    url.pathname.endsWith('.png') ||
-    url.pathname.endsWith('.jpg') ||
-    url.pathname.endsWith('.svg') ||
-    url.pathname.endsWith('.ico') ||
-    url.pathname === '/manifest.json' ||
-    url.hostname === 'cdnjs.cloudflare.com' ||
-    url.hostname === 'fonts.googleapis.com' ||
-    url.hostname === 'fonts.gstatic.com'
-  );
-}
-
-/* ── MENSAJES ── */
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('[SW] Skip waiting solicitado');
+// Mensaje desde el cliente para forzar actualización
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
