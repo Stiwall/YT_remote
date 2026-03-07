@@ -199,10 +199,11 @@ nav {
 
 .hero h1 {
   font-family: var(--syne);
-  font-size: clamp(2.2rem, 7vw, 6.5rem);
+  /* Fluid type: 1.6rem en 320px → 6.5rem en 1400px */
+  font-size: clamp(1.6rem, 4vw + 1rem, 6.5rem);
   font-weight: 800;
-  line-height: 0.95;
-  letter-spacing: -3px;
+  line-height: 1.0;
+  letter-spacing: clamp(-1px, -0.02em, -3px);
   position: relative;
   z-index: 1;
   animation: fadeUp 0.6s 0.1s ease both;
@@ -234,7 +235,7 @@ nav {
 }
 
 .hero-sub {
-  font-size: clamp(0.9rem, 2.5vw, 1.25rem);
+  font-size: clamp(0.88rem, 1.5vw + 0.5rem, 1.25rem);
   color: #888;
   font-weight: 300;
   line-height: 1.6;
@@ -560,7 +561,7 @@ nav {
 
 .section-title {
   font-family: var(--syne);
-  font-size: clamp(1.6rem, 4vw, 3rem);
+  font-size: clamp(1.4rem, 3vw + 0.5rem, 3rem);
   font-weight: 800;
   letter-spacing: -1.5px;
   line-height: 1.05;
@@ -705,7 +706,7 @@ nav {
 
 .cta-section h2 {
   font-family: var(--syne);
-  font-size: clamp(2rem, 5vw, 4rem);
+  font-size: clamp(1.6rem, 4vw + 0.5rem, 4rem);
   font-weight: 800;
   letter-spacing: -2px;
   line-height: 1;
@@ -863,40 +864,47 @@ footer a:hover { color: var(--text); }
   .nav-links { display: none; }
 
   /* Hero */
-  .hero { padding: 100px 18px 60px; }
-  .hero h1 { font-size: 2rem; letter-spacing: -1px; line-height: 1.05; }
-  .hero-sub { font-size: 0.92rem; margin-top: 18px; }
-  .hero-actions { flex-direction: column; align-items: stretch; gap: 10px; margin-top: 28px; }
-  .btn-hero { justify-content: center; padding: 14px 24px; font-size: 0.88rem; }
+  .hero { padding: 90px 20px 50px; text-align: center; }
+  .hero-sub { margin-top: 16px; }
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .btn-hero { justify-content: center; }
 
-  /* Stats — todos en fila, sin romper */
-  .hero-stats { gap: 0; margin-top: 36px; flex-wrap: nowrap; justify-content: center; width: 100%; }
-  .hero-stat { flex: 1; align-items: center; }
+  /* Stats en fila sin romper */
+  .hero-stats {
+    flex-wrap: nowrap;
+    gap: 0;
+    margin-top: 32px;
+    width: 100%;
+  }
+  .hero-stat { flex: 1; }
   .hero-stat-num { font-size: 1.1rem; }
-  .hero-stat-label { font-size: 0.58rem; }
-  .hero-stat-divider { width: 1px; height: 28px; flex-shrink: 0; }
-  .hero-mockup { margin-top: 40px; }
+  .hero-stat-label { font-size: 0.55rem; }
+  .hero-stat-divider { height: 24px; }
+  .hero-mockup { margin-top: 36px; }
 
   /* Mockup */
   .mockup-body { grid-template-columns: 1fr; }
   .mockup-sidebar { display: none; }
 
   /* Secciones */
-  .section { padding: 70px 18px; }
-  .section-title { letter-spacing: -1px; }
-  .section-sub { font-size: 0.9rem; }
+  .section { padding: 60px 20px; }
+  .section-sub { font-size: 0.88rem; }
 
   /* Steps */
   .steps { grid-template-columns: 1fr; gap: 2px; }
-  .step { padding: 28px 22px; }
+  .step { padding: 24px 20px; }
   .step:first-child { border-radius: 14px 14px 0 0; }
   .step:last-child  { border-radius: 0 0 14px 14px; }
-  .step-num { font-size: 2.5rem; }
-  .step h3 { font-size: 1rem; }
+  .step-num { font-size: 2.2rem; }
 
   /* Features */
   .features { grid-template-columns: 1fr; }
-  .feature { padding: 26px 22px; }
+  .feature { padding: 24px 20px; }
   .feature:nth-child(1) { border-radius: 14px 14px 0 0; }
   .feature:nth-child(2),
   .feature:nth-child(3),
@@ -904,26 +912,18 @@ footer a:hover { color: var(--text); }
   .feature:nth-child(5) { border-radius: 0; }
   .feature:nth-child(6) { border-radius: 0 0 14px 14px; }
   .shortcuts-visual { flex-wrap: wrap; gap: 6px; }
-  .key-chip { font-size: 0.7rem; }
 
   /* CTA */
-  .cta-section { padding: 60px 18px 80px; }
-  .cta-section h2 { letter-spacing: -1px; }
-  .cta-section p { font-size: 0.9rem; }
+  .cta-section { padding: 50px 20px 70px; }
 
   /* Footer */
-  footer { flex-direction: column; gap: 14px; text-align: center; padding: 28px 18px; }
+  footer {
+    flex-direction: column;
+    gap: 14px;
+    text-align: center;
+    padding: 24px 18px;
+  }
   footer > div { justify-content: center; }
-}
-
-/* Extra pequeño — teléfonos muy estrechos */
-@media (max-width: 380px) {
-  .hero h1 { font-size: 1.75rem; }
-  .hero-stat-num { font-size: 1rem; }
-  .hero-stat-label { font-size: 0.55rem; }
-  .section-title { font-size: 1.5rem; }
-  .cta-section h2 { font-size: 1.8rem; }
-  .btn-hero { font-size: 0.84rem; padding: 13px 20px; }
 }
 
 </style>
