@@ -577,6 +577,14 @@ nav {
   margin-bottom: 16px;
 }
 
+@media (max-width: 600px) {
+  .section-title {
+    font-family: 'Barlow Condensed', var(--syne);
+    font-size: clamp(1.6rem, 7vw, 2rem);
+    letter-spacing: -0.5px;
+  }
+}
+
 .section-sub {
   color: #666;
   font-size: 1rem;
@@ -722,6 +730,14 @@ nav {
   margin-bottom: 20px;
   position: relative;
   z-index: 1;
+}
+
+@media (max-width: 600px) {
+  .cta-section h2 {
+    font-family: 'Barlow Condensed', var(--syne);
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+    letter-spacing: -0.5px;
+  }
 }
 
 .cta-section p {
@@ -1079,7 +1095,7 @@ footer a:hover { color: var(--text); }
 <!-- ── CÓMO FUNCIONA ── -->
 <section id="como" class="section">
   <p class="section-label reveal">Proceso</p>
-  <h2 class="section-title reveal">Tres pasos.<br>Sin complicaciones.</h2>
+  <h2 class="section-title reveal">Tres pasos. Sin complicaciones.</h2>
   <p class="section-sub reveal">No necesitas instalar nada ni crear una cuenta. Funciona directo desde el navegador.</p>
 
   <div class="steps">
@@ -1113,7 +1129,7 @@ footer a:hover { color: var(--text); }
 <!-- ── FEATURES ── -->
 <section id="features" class="section" style="padding-top:0">
   <p class="section-label reveal">Features</p>
-  <h2 class="section-title reveal">Todo lo que necesitas,<br>nada que no.</h2>
+  <h2 class="section-title reveal">Todo lo que necesitas, nada que no.</h2>
 
   <div class="features">
     <div class="feature reveal">
@@ -1174,7 +1190,7 @@ footer a:hover { color: var(--text); }
 <!-- ── CTA FINAL ── -->
 <section class="cta-section">
   <div class="cta-glow"></div>
-  <h2 class="reveal">¿Listo para<br><em style="color:var(--red);font-style:normal">empezar?</em></h2>
+  <h2 class="reveal">¿Listo para <em style="color:var(--red);font-style:normal">empezar?</em></h2>
   <p class="reveal">Sin registro. Sin tarjeta. Sin instalación.</p>
   <div class="hero-actions reveal">
     <a href="app.html" class="btn-hero btn-hero-primary">
