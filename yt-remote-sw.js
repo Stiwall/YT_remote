@@ -1,21 +1,20 @@
 // ═══════════════════════════════════════════════════════
-//  YT Remote — Service Worker
+//  YT Remote — Service Worker v5
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME  = 'ytremote-v4';
+const CACHE_NAME  = 'ytremote-v5';
 const CACHE_URLS  = [
-  '/',
-  '/index.html',
-  '/app.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap',
+  './',
+  './index.html',
+  './app.html',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js'
 ];
 
-// Instalar — cachear recursos esenciales
+// Instalar
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME)
@@ -24,7 +23,7 @@ self.addEventListener('install', (e) => {
   );
 });
 
-// Activar — limpiar cachés viejos
+// Activar
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -37,11 +36,10 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Fetch — cache first para assets, network first para el app
+// Fetch
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // Siempre red para APIs externas (YouTube, PeerJS, búsqueda)
   if (
     url.hostname.includes('youtube') ||
     url.hostname.includes('peerjs') ||
@@ -51,7 +49,7 @@ self.addEventListener('fetch', (e) => {
     url.hostname.includes('noembed') ||
     url.hostname.includes('corsproxy')
   ) {
-    return; // deja pasar sin interceptar
+    return;
   }
 
   e.respondWith(
@@ -59,7 +57,6 @@ self.addEventListener('fetch', (e) => {
       if (cached) return cached;
       return fetch(e.request)
         .then(res => {
-          // Cachear respuestas válidas de mismo origen
           if (res.ok && url.origin === self.location.origin) {
             const clone = res.clone();
             caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
@@ -67,16 +64,14 @@ self.addEventListener('fetch', (e) => {
           return res;
         })
         .catch(() => {
-          // Offline fallback: devolver app.html para navegación
           if (e.request.mode === 'navigate') {
-            return caches.match('/app.html') || caches.match('/index.html');
+            return caches.match('./app.html') || caches.match('./index.html');
           }
         });
     })
   );
 });
 
-// Mensaje desde el cliente para forzar actualización
 self.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

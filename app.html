@@ -4555,7 +4555,7 @@ let swRegistration = null;
 // Registrar Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js', { scope: '/' })
+    navigator.serviceWorker.register('yt-remote-sw.js', { scope: './' })
       .then((registration) => {
         console.log('[PWA] SW registrado:', registration.scope);
         swRegistration = registration;
