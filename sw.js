@@ -1,12 +1,14 @@
 // ═══════════════════════════════════════════════════════
 //  YT Remote — Service Worker
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME  = 'ytremote-v3';
+const CACHE_NAME  = 'ytremote-v4';
 const CACHE_URLS  = [
   '/',
   '/index.html',
   '/app.html',
   '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
   'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
