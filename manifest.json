@@ -1,6 +1,7 @@
 {
   "name": "YT Remote - Control Remoto YouTube",
   "short_name": "YT Remote",
+  "id": "yt-remote-app",
   "description": "Controla YouTube desde cualquier dispositivo. Sincroniza tu pantalla con tu teléfono como control remoto.",
   "start_url": "/app.html",
   "scope": "/",
