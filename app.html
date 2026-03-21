@@ -2250,6 +2250,7 @@ kbd {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+.welcome-icon {
   width: 64px;
   height: 64px;
   background: linear-gradient(135deg, var(--red), var(--red-dark));
@@ -4559,25 +4560,20 @@ if ('serviceWorker' in navigator) {
       .then((registration) => {
         console.log('[PWA] SW registrado:', registration.scope);
         swRegistration = registration;
-      })
-      .catch((err) => {
-        console.log('[PWA] SW no disponible:', err);
-        // La app funciona sin SW
-      });
         
         // Escuchar actualizaciones
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Nueva versión disponible
               showUpdateBanner();
             }
           });
         });
       })
-      .catch((error) => {
-        console.error('[PWA] Error registrando SW:', error);
+      .catch((err) => {
+        console.log('[PWA] SW no disponible:', err);
+        // La app funciona sin SW
       });
     
     // Escuchar mensajes del SW
