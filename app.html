@@ -1611,7 +1611,10 @@ function initRemote() {
 }
 
 function loadYouTubeAPI() {
-  if (document.getElementById('youtube-api')) return;
+  // Remove any existing YT API script to force fresh load
+  const old = document.getElementById('youtube-api');
+  if (old) old.remove();
+  window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
   const tag = document.createElement('script');
   tag.id = 'youtube-api';
   tag.src = 'https://www.youtube.com/iframe_api';
