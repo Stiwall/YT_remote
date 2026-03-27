@@ -609,7 +609,7 @@ header {
 
       <!-- Search -->
       <div class="search-box">
-        <input id="search-input" type="text" placeholder="Buscar video o pegar URL de YouTube..." onkeydown="if(event.key==='Enter')doSearch()">
+        <input id="search-input" type="text" placeholder="Busca cualquier video o pega un enlace de YouTube..." onkeydown="if(event.key==='Enter')doSearch()">
         <button class="btn btn-sec" onclick="doSearch()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
@@ -1244,7 +1244,7 @@ async function fetchWithTimeout(url, ms = 6000) {
 })();
 
 async function searchYouTubeAPI(q, key) {
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=9&q=${encodeURIComponent(q)}&key=${encodeURIComponent(key)}`;
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=9&q=${encodeURIComponent(q)}&key=${encodeURIComponent(key)}&relevanceLanguage=es&hl=es`;
   const r = await fetchWithTimeout(url, 6000);
   const data = await r.json();
   if (data.error) throw new Error(data.error.message);
