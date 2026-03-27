@@ -1024,12 +1024,14 @@ function initPeer() {
   if (!roomCode) return;
 
   const myId = mode === 'host' ? makeHostId(roomCode) : makeRemoteId(roomCode);
+  const peerKey = localStorage.getItem('peerKey') || '4d4e559c-0997-46b1-87e2-51a1422f70d0';
   const options = {
-    host: 'reserve-irrigation-contractor-locator.trycloudflare.com',
+    host: '0.peerjs.com',
     port: 443,
     path: '/',
     secure: true,
-    debug: 2
+    debug: 0,
+    key: peerKey
   };
 
   try { peer = new Peer(myId, options); }
@@ -1627,6 +1629,9 @@ window.onload = () => {
   const p = new URLSearchParams(window.location.search);
   if (p.get('room')) document.getElementById('room-input').value = p.get('room').toUpperCase();
   if (p.get('mode') === 'remote') setMode('remote');
+  if (p.get('key')) { localStorage.setItem('peerKey', p.get('key')); showToast('API key guardada'); }
+  const savedKey = localStorage.getItem('peerKey');
+  if (savedKey) document.title = 'YT Remote [' + savedKey.substring(0,8) + '...]';
 };
 
 /* ─── Service Worker ─── */
