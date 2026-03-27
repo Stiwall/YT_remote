@@ -1024,7 +1024,7 @@ function initPeer() {
   if (!roomCode) return;
 
   const myId = mode === 'host' ? makeHostId(roomCode) : makeRemoteId(roomCode);
-  const peerKey = localStorage.getItem('peerKey') || '4d4e559c-0997-46b1-87e2-51a1422f70d0';
+  const peerKey = localStorage.getItem('peerKey') || 'peerjs';
   const options = {
     host: '0.peerjs.com',
     port: 443,
