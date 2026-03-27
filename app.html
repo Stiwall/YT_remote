@@ -1199,45 +1199,79 @@ function extractVideoId(url) {
 async function searchYouTube(q) {
   const res = document.getElementById('results-list');
   res.innerHTML = '<div class="hint">Buscando...</div>';
-  // Try Invidious
-  const instances = ['https://iv.nboeck.de', 'https://invidious.privacyredirect.com'];
-  let ok = false;
-  for (const base of instances) {
+
+  // Method 1: Try Invidious instances
+  const invidious = ['https://iv.nboeck.de', 'https://inv.nadeko.net', 'https://invidious.privacyredirect.com'];
+  for (const base of invidious) {
     try {
-      const r = await fetch(base + '/api/v1/search?q=' + encodeURIComponent(q) + '&type=video&count=9', { signal: AbortSignal.timeout(5000) });
-      if (!r.ok) continue;
-      const data = await r.json();
-      if (data && data.length > 0) {
-        ok = true;
-        res.innerHTML = data.map(item => {
-          const id = item.videoId;
-          if (!id) return '';
-          const title = item.title || 'Video sin titulo';
-          const author = item.author || '';
-          const thumb = item.thumbnailUrl || 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg';
-          return '<div class="result-item" onclick="playResult(\'' + id + '\',\'' + h(title) + '\')">' +
-            '<img class="result-thumb" src="' + thumb + '" alt="" onerror="this.src=\'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg\'">' +
-            '<div class="result-info"><div class="result-title">' + h(title) + '</div><div class="result-ch">' + h(author) + '</div></div>' +
-            '<div class="result-act"><button class="btn btn-sec" style="padding:5px 8px;font-size:0.62rem" onclick="event.stopPropagation();sendResult(\'' + id + '\',\'' + h(title) + '\')">Enviar</button></div>' +
-          '</div>';
-        }).join('');
-        return;
+      const r = await fetch(base + '/api/v1/search?q=' + encodeURIComponent(q) + '&type=video&count=9', { signal: AbortSignal.timeout(4000) });
+      if (r.ok) {
+        const data = await r.json();
+        if (data && data.length > 0) {
+          renderResults(data); return;
+        }
       }
     } catch(e) { continue; }
   }
-  if (!ok) {
-    // Fallback: mostrar hint con link directo a YouTube
-    res.innerHTML = '<div class="hint" style="text-align:center;padding:16px 12px">' +
-      '<div style="margin-bottom:10px;color:var(--text-2);font-size:0.8rem">Copia el enlace del video de YouTube y pegalo aqui</div>' +
-      '<div style="margin-bottom:10px;color:var(--text-2);font-size:0.78rem">o busca directo en YouTube:</div>' +
-      '<button class="btn btn-sec" onclick="openYT()">Buscar en YouTube</button>' +
-    '</div>';
-  }
+
+  // Method 2: Scrape YouTube via allorigins CORS proxy
+  try {
+    const proxy = 'https://api.allorigins.win/raw?url=';
+    const url = proxy + encodeURIComponent('https://www.youtube.com/results?search_query=' + encodeURIComponent(q) + '&pp=1');
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const html = await r.text();
+    const ids = [...html.matchAll(/(?:video_id|ei)[=:]["']([a-zA-Z0-9_-]{11})/g)];
+    const seen = new Set();
+    const unique = [];
+    for (const m of ids) {
+      if (!seen.has(m[1])) { seen.add(m[1]); unique.push(m[1]); }
+      if (unique.length >= 9) break;
+    }
+    if (unique.length > 0) {
+      // Get titles from meta tags in the HTML
+      const titles = [...html.matchAll(/<title>(.{5,80}) - YouTube<\/title>/g)];
+      const results = unique.map((id, i) => ({
+        videoId: id,
+        title: titles[i] ? titles[i][1].replace(/&amp;/g,'&').replace(/&#39;/g,"'") : 'Video',
+        author: '',
+        thumbnailUrl: 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg'
+      }));
+      renderResults(results); return;
+    }
+  } catch(e) {}
+
+  // Method 3: Google Suggest API (autocomplete, no CORS)
+  try {
+    const r = await fetch('https://suggestqueries.google.com/complete/search?client=firefox&q=' + encodeURIComponent(q), { signal: AbortSignal.timeout(4000) });
+    const json = await r.json();
+    if (json && json[1] && json[1].length > 0) {
+      const suggestions = json[1].slice(0, 5);
+      res.innerHTML = '<div class="hint" style="text-align:left;padding:8px 0"><div style="margin-bottom:8px;font-size:0.72rem;color:var(--text-3)">SUGERENCIAS:</div>' +
+        suggestions.map(s => '<div class="result-item" onclick="document.getElementById(\'search-input\').value=\'' + h(s) + '\';doSearch()" style="padding:10px 8px"><div class="result-title" style="font-size:0.82rem">' + h(s) + '</div></div>').join('') +
+        '</div>';
+      return;
+    }
+  } catch(e) {}
+
+  res.innerHTML = '<div class="hint" style="text-align:center;padding:16px 12px">' +
+    '<div style="margin-bottom:8px;color:var(--text-2)">No se encontro nada. Intenta con otro nombre o pega una URL de YouTube.</div>' +
+  '</div>';
 }
 
-function openYT() {
-  const q = document.getElementById('search-input').value.trim();
-  if (q) window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank');
+function renderResults(data) {
+  const res = document.getElementById('results-list');
+  res.innerHTML = data.map(item => {
+    const id = item.videoId;
+    if (!id) return '';
+    const title = item.title || 'Video sin titulo';
+    const author = item.author || '';
+    const thumb = item.thumbnailUrl || 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg';
+    return '<div class="result-item" onclick="playResult(\'' + id + '\',\'' + h(title) + '\')">' +
+      '<img class="result-thumb" src="' + thumb + '" alt="" onerror="this.src=\'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg\'">' +
+      '<div class="result-info"><div class="result-title">' + h(title) + '</div><div class="result-ch">' + h(author) + '</div></div>' +
+      '<div class="result-act"><button class="btn btn-sec" style="padding:5px 8px;font-size:0.62rem" onclick="event.stopPropagation();sendResult(\'' + id + '\',\'' + h(title) + '\')">Enviar</button></div>' +
+    '</div>';
+  }).join('');
 }
 
 function playResult(id, title) {
