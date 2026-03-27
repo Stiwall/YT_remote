@@ -9,8 +9,8 @@
      PWA META TAGS
      ═══════════════════════════════════════════════════════ -->
 <!-- Tema y colores -->
-<meta name="theme-color" content="#FF0000">
-<meta name="msapplication-TileColor" content="#FF0000">
+<meta name="theme-color" content="#FF8C00">
+<meta name="msapplication-TileColor" content="#FF8C00">
 <meta name="msapplication-navbutton-color" content="#FF0000">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,7 +21,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
-<link rel="mask-icon" href="icons/icon-maskable.png" color="#FF0000">
+<link rel="mask-icon" href="icons/icon-maskable.png" color="#FF8C00">
 
 <!-- Iconos favicon -->
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -58,7 +58,7 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+  background: linear-gradient(135deg, var(--orange) 0%, var(--red) 100%);
   color: white;
   border: none;
   border-radius: 50px;
@@ -66,7 +66,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(255, 140, 0, 0.4);
   display: none;
   align-items: center;
   gap: 10px;
@@ -128,7 +128,7 @@
   top: 0;
   left: 0;
   right: 0;
-  background: var(--red);
+  background: var(--orange);
   color: white;
   padding: 12px 20px;
   display: none;
@@ -146,7 +146,7 @@
 
 .pwa-update-banner button {
   background: white;
-  color: var(--red);
+  color: var(--orange);
   border: none;
   padding: 8px 16px;
   border-radius: 20px;
@@ -201,6 +201,9 @@ html {
   --red: #FF0000;
   --red-dark: #CC0000;
   --red-light: #ff4444;
+  --orange: #FF8C00;
+  --orange-dark: #CC7000;
+  --orange-light: #FFB347;
   --dark: #0f0f0f;
   --darker: #0a0a0a;
   --panel: #1a1a1a;
@@ -259,7 +262,7 @@ header {
 .logo-icon {
   width: 42px;
   height: 42px;
-  background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+  background: linear-gradient(135deg, var(--orange) 0%, var(--red) 100%);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -275,7 +278,7 @@ header {
 }
 
 .logo-text span {
-  color: var(--red);
+  color: var(--orange);
 }
 
 header .subtitle {
@@ -365,7 +368,7 @@ header .subtitle {
 }
 
 .sync-option.active .icon {
-  background: var(--red);
+  background: var(--orange);
 }
 
 .sync-option .info {
@@ -399,7 +402,7 @@ header .subtitle {
 }
 
 .sync-option.active .check {
-  background: var(--red);
+  background: var(--orange);
   border-color: var(--red);
   color: white;
 }
@@ -435,7 +438,7 @@ header .subtitle {
 }
 
 .mode-btn.active { 
-  background: var(--red); 
+  background: var(--orange); 
   color: white;
   box-shadow: 0 4px 15px rgba(255,0,0,0.3);
 }
@@ -498,7 +501,7 @@ header .subtitle {
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+  background: linear-gradient(135deg, var(--orange) 0%, var(--red) 100%);
   border: none;
   color: white;
   border-radius: var(--radius);
@@ -723,7 +726,7 @@ header .subtitle {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--red) 0%, var(--red-dark) 100%);
+  background: linear-gradient(90deg, var(--orange) 0%, var(--red) 100%);
   width: 0%;
   transition: width 0.3s ease;
   border-radius: 3px;
@@ -1190,7 +1193,7 @@ input[type=range]::-webkit-slider-thumb:hover {
   font-size: 2.5rem;
   font-weight: 800;
   letter-spacing: 8px;
-  color: var(--red);
+  color: var(--orange);
   font-family: 'SF Mono', monospace;
 }
 
@@ -2421,7 +2424,7 @@ kbd {
 </button>
 
 <header>
-  <a href="index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;">
+  <a href="#" style="text-decoration:none;color:inherit;display:flex;align-items:center;">
   <div class="logo">
     <div class="logo-icon">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">

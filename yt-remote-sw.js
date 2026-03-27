@@ -1,10 +1,9 @@
 // ═══════════════════════════════════════════════════════
 //  YT Remote — Service Worker v5
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME  = 'ytremote-v5';
+const CACHE_NAME  = 'ytremote-v6';
 const CACHE_URLS  = [
   './',
-  './index.html',
   './app.html',
   './manifest.json',
   './icons/icon-192.png',
@@ -65,7 +64,7 @@ self.addEventListener('fetch', (e) => {
         })
         .catch(() => {
           if (e.request.mode === 'navigate') {
-            return caches.match('./app.html') || caches.match('./index.html');
+            return caches.match('./app.html') || caches.match('./app.html');
           }
         });
     })
