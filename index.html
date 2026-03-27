@@ -1199,35 +1199,43 @@ function extractVideoId(url) {
 async function searchYouTube(q) {
   const res = document.getElementById('results-list');
   res.innerHTML = '<div class="hint">Buscando...</div>';
-  try {
-    // Usar Invidious (libre de CORS)
-    const r = await fetch('https://yewtu.be/api/v1/search?q=' + encodeURIComponent(q) + '&type=video&count=9');
-    const data = await r.json();
-    if (!data || data.length === 0) { res.innerHTML = '<div class="hint">Sin resultados</div>'; return; }
-    res.innerHTML = data.map(item => {
-      const id = item.videoId;
-      if (!id) return '';
-      const title = item.title || 'Video sin titulo';
-      const author = item.author || '';
-      const thumb = item.thumbnailUrl || 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg';
-      return '<div class="result-item" onclick="playResult(\'' + id + '\',\'' + h(title) + '\')">' +
-        '<img class="result-thumb" src="' + thumb + '" alt="" onerror="this.src=\'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg\'">' +
-        '<div class="result-info">' +
-          '<div class="result-title">' + h(title) + '</div>' +
-          '<div class="result-ch">' + h(author) + '</div>' +
-        '</div>' +
-        '<div class="result-act">' +
-          '<button class="btn btn-sec" style="padding:5px 8px;font-size:0.62rem" onclick="event.stopPropagation();sendResult(\'' + id + '\',\'' + h(title) + '\')">Enviar</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  } catch(e) {
-    // Fallback: buscar en youtube directo
-    res.innerHTML = '<div class="hint" style="padding:16px"><div style="margin-bottom:8px">No se pudo buscar automaticamente</div><button class="btn btn-sec" onclick="openYouTubeSearch()">Buscar en YouTube</button></div>';
+  // Try Invidious
+  const instances = ['https://iv.nboeck.de', 'https://invidious.privacyredirect.com'];
+  let ok = false;
+  for (const base of instances) {
+    try {
+      const r = await fetch(base + '/api/v1/search?q=' + encodeURIComponent(q) + '&type=video&count=9', { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (data && data.length > 0) {
+        ok = true;
+        res.innerHTML = data.map(item => {
+          const id = item.videoId;
+          if (!id) return '';
+          const title = item.title || 'Video sin titulo';
+          const author = item.author || '';
+          const thumb = item.thumbnailUrl || 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg';
+          return '<div class="result-item" onclick="playResult(\'' + id + '\',\'' + h(title) + '\')">' +
+            '<img class="result-thumb" src="' + thumb + '" alt="" onerror="this.src=\'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg\'">' +
+            '<div class="result-info"><div class="result-title">' + h(title) + '</div><div class="result-ch">' + h(author) + '</div></div>' +
+            '<div class="result-act"><button class="btn btn-sec" style="padding:5px 8px;font-size:0.62rem" onclick="event.stopPropagation();sendResult(\'' + id + '\',\'' + h(title) + '\')">Enviar</button></div>' +
+          '</div>';
+        }).join('');
+        return;
+      }
+    } catch(e) { continue; }
+  }
+  if (!ok) {
+    // Fallback: mostrar hint con link directo a YouTube
+    res.innerHTML = '<div class="hint" style="text-align:center;padding:16px 12px">' +
+      '<div style="margin-bottom:10px;color:var(--text-2);font-size:0.8rem">Copia el enlace del video de YouTube y pegalo aqui</div>' +
+      '<div style="margin-bottom:10px;color:var(--text-2);font-size:0.78rem">o busca directo en YouTube:</div>' +
+      '<button class="btn btn-sec" onclick="openYT()">Buscar en YouTube</button>' +
+    '</div>';
   }
 }
 
-function openYouTubeSearch() {
+function openYT() {
   const q = document.getElementById('search-input').value.trim();
   if (q) window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank');
 }
