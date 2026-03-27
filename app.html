@@ -1025,12 +1025,11 @@ function initPeer() {
 
   const myId = mode === 'host' ? makeHostId(roomCode) : makeRemoteId(roomCode);
   const options = {
-    host: '0.peerjs.com',
+    host: 'reserve-irrigation-contractor-locator.trycloudflare.com',
     port: 443,
     path: '/',
     secure: true,
-    debug: 2,
-    key: 'peerjs'
+    debug: 2
   };
 
   try { peer = new Peer(myId, options); }
