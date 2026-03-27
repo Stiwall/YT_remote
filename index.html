@@ -830,18 +830,57 @@ let peerConn = null;
 let peerConns = new Map();
 let bc = null;
 let _peerReady = false;
+
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  { urls: 'stun:stun.services.mozilla.com:3478' },
+  {
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp'
+    ],
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:numb.viagenie.ca',
+    username: 'webrtc@live.com',
+    credential: 'webrtc'
+  }
+];
+
+const SERVERS = [
+  {
+    name: 'PeerJS Cloud',
+    host: '0.peerjs.com',
+    port: 443,
+    path: '/',
+    secure: true,
+    config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'all', iceCandidatePoolSize: 10 }
+  },
+  {
+    name: 'PeerJS Cloud #2',
+    host: '0.peerjs.com',
+    port: 443,
+    path: '/',
+    secure: true,
+    config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'relay' }
+  }
+];
+
+let currentServerIndex = 0;
 let _hostConnAttempts = 0;
 let _reconnectCount = 0;
 let _useRelay = false;
 let inRoom = false;
 let newRoomMode = 'host';
-
-/* ─── PeerJS Servers ─── */
-const SERVERS = [
-  { host: '0.peerjs.com', port: 443, path: '/', ping: 100 },
-  { host: 'ytremote-0if1.onrender.com', port: 443, path: '/', ping: 200 },
-];
-let currentServerIndex = 0;
 
 function makeHostId(code) { return 'ht-' + code.toLowerCase(); }
 function makeRemoteId(code) { return 'rm-' + code.toLowerCase(); }
@@ -1030,8 +1069,9 @@ function initPeer() {
 
   const srv = SERVERS[currentServerIndex];
   const myId = mode === 'host' ? makeHostId(roomCode) : makeRemoteId(roomCode);
+  const options = { ...srv, debug: 0 };
 
-  try { peer = new Peer(myId, srv); }
+  try { peer = new Peer(myId, options); }
   catch(e) { setTimeout(initPeer, 3000); return; }
 
   peer.on('open', (id) => {
@@ -1611,7 +1651,10 @@ function initRemote() {
 }
 
 function loadYouTubeAPI() {
-  if (document.getElementById('youtube-api')) return;
+  // Remove any existing YT API script to force fresh load
+  const old = document.getElementById('youtube-api');
+  if (old) old.remove();
+  window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
   const tag = document.createElement('script');
   tag.id = 'youtube-api';
   tag.src = 'https://www.youtube.com/iframe_api';

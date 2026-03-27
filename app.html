@@ -882,13 +882,6 @@ let _useRelay = false;
 let inRoom = false;
 let newRoomMode = 'host';
 
-/* ─── PeerJS Servers ─── */
-const SERVERS = [
-  { host: '0.peerjs.com', port: 443, path: '/', ping: 100 },
-  { host: 'ytremote-0if1.onrender.com', port: 443, path: '/', ping: 200 },
-];
-let currentServerIndex = 0;
-
 function makeHostId(code) { return 'ht-' + code.toLowerCase(); }
 function makeRemoteId(code) { return 'rm-' + code.toLowerCase(); }
 
