@@ -531,15 +531,21 @@ header {
     </div>
   </div>
 
-  <button class="btn btn-pri" onclick="joinRoom()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-    Entrar a la Sala
+  <button class="btn btn-pri" onclick="createAndEnter()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Crear Nueva Sala
   </button>
 
-  <button class="btn btn-sec" onclick="generateCode()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-    Generar Codigo
-  </button>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-sec" style="flex:1" onclick="joinRoom()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Unirse
+    </button>
+    <button class="btn btn-sec" style="flex:1" onclick="generateCode()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Generar
+    </button>
+  </div>
 </div>
 
 <!-- ─── HOST SCREEN ─── -->
@@ -739,7 +745,7 @@ header {
 <div class="toast" id="toast"></div>
 
 <!-- QR lib -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
 /* ─── State ─── */
@@ -791,7 +797,12 @@ function generateCode() {
   let c = '';
   for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
   document.getElementById('room-input').value = c;
-  showToast('Codigo: ' + c);
+}
+
+function createAndEnter() {
+  generateCode();
+  // Give 50ms for the input to update, then join
+  setTimeout(() => joinRoom(), 50);
 }
 
 /* ─── Mode ─── */
@@ -877,13 +888,20 @@ function toggleQR() {
   if (area.style.display === 'none') {
     area.style.display = 'block';
     const url = window.location.origin + '/?room=' + roomCode + '&mode=remote';
-    const canvas = document.createElement('canvas');
-    QRCode.toCanvas(canvas, url, { width: 180, margin: 1 }, (err) => {
-      if (!err) {
-        document.getElementById('qr-canvas').innerHTML = '';
-        document.getElementById('qr-canvas').appendChild(canvas);
-      }
-    });
+    const container = document.getElementById('qr-canvas');
+    container.innerHTML = '';
+    try {
+      new QRCode(container, {
+        text: url,
+        width: 160,
+        height: 160,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } catch(e) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:0.8rem">No se pudo generar el QR<br><a href="' + url + '" style="color:var(--blue)">' + url + '</a></div>';
+    }
   } else {
     area.style.display = 'none';
   }
@@ -908,7 +926,7 @@ function shareRoomLink() {
 }
 
 /* ─── New Room Modal ─── */
-function generateCode() {
+function generateNewCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let c = '';
   for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
@@ -917,7 +935,7 @@ function generateCode() {
 
 function openNewRoomModal() {
   document.getElementById('new-room-modal').classList.add('show');
-  generateCode();
+  generateNewCode();
 }
 
 function closeNewRoomModal() {
@@ -1182,24 +1200,36 @@ async function searchYouTube(q) {
   const res = document.getElementById('results-list');
   res.innerHTML = '<div class="hint">Buscando...</div>';
   try {
-    const r = await fetch('https://noembed.com/noembed?dataType=json&maxResults=8&includeDomain=1&url=https://www.youtube.com/results?search_query=' + encodeURIComponent(q));
+    // Usar Invidious (libre de CORS)
+    const r = await fetch('https://yewtu.be/api/v1/search?q=' + encodeURIComponent(q) + '&type=video&count=9');
     const data = await r.json();
     if (!data || data.length === 0) { res.innerHTML = '<div class="hint">Sin resultados</div>'; return; }
     res.innerHTML = data.map(item => {
-      const id = extractVideoId(item.url);
+      const id = item.videoId;
       if (!id) return '';
-      return '<div class="result-item" onclick="playResult(\'' + id + '\',\'' + h(item.title) + '\')">' +
-        '<img class="result-thumb" src="https://i.ytimg.com/vi/' + id + '/mqdefault.jpg" alt="">' +
+      const title = item.title || 'Video sin titulo';
+      const author = item.author || '';
+      const thumb = item.thumbnailUrl || 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg';
+      return '<div class="result-item" onclick="playResult(\'' + id + '\',\'' + h(title) + '\')">' +
+        '<img class="result-thumb" src="' + thumb + '" alt="" onerror="this.src=\'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg\'">' +
         '<div class="result-info">' +
-          '<div class="result-title">' + h(item.title) + '</div>' +
-          '<div class="result-ch">' + h(item.author_name) + '</div>' +
+          '<div class="result-title">' + h(title) + '</div>' +
+          '<div class="result-ch">' + h(author) + '</div>' +
         '</div>' +
         '<div class="result-act">' +
-          '<button class="btn btn-sec" style="padding:5px 8px;font-size:0.62rem" onclick="event.stopPropagation();sendResult(\'' + id + '\',\'' + h(item.title) + '\')">Enviar</button>' +
+          '<button class="btn btn-sec" style="padding:5px 8px;font-size:0.62rem" onclick="event.stopPropagation();sendResult(\'' + id + '\',\'' + h(title) + '\')">Enviar</button>' +
         '</div>' +
       '</div>';
     }).join('');
-  } catch(e) { res.innerHTML = '<div class="hint">Error en busqueda</div>'; }
+  } catch(e) {
+    // Fallback: buscar en youtube directo
+    res.innerHTML = '<div class="hint" style="padding:16px"><div style="margin-bottom:8px">No se pudo buscar automaticamente</div><button class="btn btn-sec" onclick="openYouTubeSearch()">Buscar en YouTube</button></div>';
+  }
+}
+
+function openYouTubeSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (q) window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank');
 }
 
 function playResult(id, title) {
