@@ -9,8 +9,8 @@
      PWA META TAGS
      ═══════════════════════════════════════════════════════ -->
 <!-- Tema y colores -->
-<meta name="theme-color" content="#FF8C00">
-<meta name="msapplication-TileColor" content="#FF8C00">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="msapplication-TileColor" content="#0f0f0f">
 <meta name="msapplication-navbutton-color" content="#FF0000">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -198,27 +198,29 @@ html {
    TUS ESTILOS ORIGINALES (SIN MODIFICAR)
    ═══════════════════════════════════════════════════════ */
 :root {
-  --red: #FF0000;
-  --red-dark: #CC0000;
-  --red-light: #ff4444;
+  --red: #FF2222;
+  --red-dark: #CC1111;
+  --red-light: #ff5555;
   --orange: #FF8C00;
   --orange-dark: #CC7000;
   --orange-light: #FFB347;
   --dark: #0f0f0f;
-  --darker: #0a0a0a;
-  --panel: #1a1a1a;
-  --panel-hover: #222222;
-  --border: #333333;
-  --text: #ffffff;
+  --darker: #111111;
+  --panel: #181818;
+  --panel-hover: #202020;
+  --border: #252525;
+  --border-2: #303030;
+  --text: #f0f0f0;
   --text-secondary: #aaaaaa;
   --text-muted: #666666;
-  --green: #00c853;
-  --yellow: #ffd600;
-  --blue: #2962ff;
+  --green: #00d084;
+  --yellow: #ffc300;
+  --blue: #3d8bff;
   --shadow: 0 4px 20px rgba(0,0,0,0.5);
-  --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
-  --radius: 12px;
-  --radius-sm: 8px;
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.65);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --transition: 0.2s ease;
 }
 
 * { 
@@ -966,21 +968,18 @@ input[type=range]::-webkit-slider-thumb:hover {
 }
 
 .results-list::-webkit-scrollbar,
-.queue-list::-webkit-scrollbar,
-.log-container::-webkit-scrollbar {
+.queue-list::-webkit-scrollbar {
   width: 6px;
 }
 
 .results-list::-webkit-scrollbar-track,
-.queue-list::-webkit-scrollbar-track,
-.log-container::-webkit-scrollbar-track {
+.queue-list::-webkit-scrollbar-track {
   background: var(--darker);
   border-radius: 3px;
 }
 
 .results-list::-webkit-scrollbar-thumb,
-.queue-list::-webkit-scrollbar-thumb,
-.log-container::-webkit-scrollbar-thumb {
+.queue-list::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 3px;
 }
@@ -1316,32 +1315,6 @@ input[type=range]::-webkit-slider-thumb:hover {
   line-height: 1.6;
 }
 
-/* Log */
-.log-container {
-  max-height: 150px;
-  overflow-y: auto;
-  font-size: 0.7rem;
-  line-height: 1.8;
-  font-family: 'SF Mono', monospace;
-}
-
-.log-entry {
-  padding: 4px 0;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: 8px;
-}
-
-.log-time {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.log-send { color: var(--blue); }
-.log-recv { color: var(--green); }
-.log-warn { color: var(--yellow); }
-.log-info { color: var(--text-secondary); }
-
 /* Spinner */
 .spinner {
   display: inline-block;
@@ -1485,7 +1458,6 @@ input[type=range]::-webkit-slider-thumb:hover {
   .queue-list { max-height: 240px; }
 
   .room-code-text { font-size: 2rem; letter-spacing: 6px; }
-  .log-container { max-height: 120px; }
 
   .now-playing-bar { flex-wrap: wrap; gap: 8px; }
   .now-title { width: 100%; order: -1; }
@@ -2683,17 +2655,6 @@ kbd {
       </div>
     </div>
 
-    <!-- Log de actividad -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Actividad
-        </div>
-      </div>
-      <div class="log-container" id="log"></div>
-    </div>
-
     </div><!-- /tab-controls -->
   </div><!-- /mobile-section -->
   </div><!-- /left-col -->
@@ -2738,7 +2699,7 @@ kbd {
       <!-- QR Code -->
       <div class="qr-section" id="qr-section" style="display:none">
         <div class="qr-divider">
-          <span>📱 Escanea para conectar</span>
+          <span>Conectar desde el celular</span>
         </div>
 
         <div class="qr-card">
@@ -2807,7 +2768,9 @@ kbd {
                 style="width:100%;background:var(--darker);border:2px solid var(--border);color:var(--text);font-size:1.1rem;font-weight:700;padding:12px 16px;border-radius:var(--radius);outline:none;text-transform:uppercase;letter-spacing:3px;text-align:center;"
                 onkeydown="if(event.key==='Enter')confirmNewRoom()">
             </div>
-            <button class="btn-small btn-dark-sm" onclick="genNewCode()" style="padding:12px 14px;white-space:nowrap;">🎲</button>
+            <button class="btn-small btn-dark-sm" onclick="genNewCode()" style="padding:12px 14px;white-space:nowrap;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </button>
           </div>
         </div>
 
@@ -3198,7 +3161,7 @@ function confirmNewRoom() {
 
   // Actualizar UI de sala
   document.getElementById('code-display').querySelector('.room-code-text').textContent = roomCode;
-  const lockIcon = roomPassword ? ' 🔒' : '';
+  const lockIcon = roomPassword ? ' <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;opacity:0.6"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' : '';
   document.getElementById('room-meta').innerHTML = `
     <strong>Modo:</strong> ${mode === 'host' ? 'Pantalla' : 'Control'}<br>
     <strong>Sala:</strong> ${roomCode}${lockIcon}<br>
@@ -3254,7 +3217,7 @@ function joinRoom() {
   }
 
   document.getElementById('code-display').querySelector('.room-code-text').textContent = roomCode;
-  const lockIcon = roomPassword ? ' 🔒' : '';
+  const lockIcon = roomPassword ? ' <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;opacity:0.6"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' : '';
   document.getElementById('room-meta').innerHTML = `
     <strong>Modo:</strong> ${mode === 'host' ? 'Pantalla' : 'Control'}<br>
     <strong>Sala:</strong> ${roomCode}${lockIcon}<br>
@@ -4430,7 +4393,7 @@ async function doSearch() {
   // Sin resultados en ninguna fuente
   area.innerHTML = `
     <div class="hint" style="text-align:left; padding: 20px 16px;">
-      <div style="font-size:1.1rem; margin-bottom:10px;">😔 Sin resultados</div>
+      <div style="font-size:1.1rem; margin-bottom:10px;">Sin resultados</div>
       <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.8;">
         Todos los servidores están inaccesibles ahora.<br>
         <strong style="color:var(--text)">Opciones:</strong><br>
@@ -4532,16 +4495,9 @@ function initPlayer(videoId) {
 /* ═══════════════════════════════════════════════════════
    UTILS
    ═══════════════════════════════════════════════════════ */
+// Activity log — removed from UI, kept as no-op
 function log(msg, type) {
-  const el = document.getElementById('log');
-  const entry = document.createElement('div');
-  entry.className = 'log-entry log-' + (type || 'info');
-  entry.innerHTML = `
-    <span class="log-time">${new Date().toLocaleTimeString()}</span>
-    <span>${msg}</span>
-  `;
-  el.prepend(entry);
-  while (el.children.length > 50) el.lastChild.remove();
+  // Console only: console.log('[YTRemote]', msg);
 }
 
 function h(s) {
@@ -4917,7 +4873,7 @@ function kbVolume(delta) {
   const next   = Math.min(100, Math.max(0, cur + delta));
   slider.value = next;
   sendVol(next);
-  shortcutToast(delta > 0 ? `🔊 Volumen: ${next}%` : `🔉 Volumen: ${next}%`);
+  shortcutToast(delta > 0 ? `Vol: ${next}%` : `Vol: ${next}%`);
 }
 
 // Helper: seek relativo
@@ -4933,7 +4889,7 @@ function kbSeek(secs) {
     // En modo control, envía seekTo relativo al host
     sendCmd('seek-relative', { delta: secs });
   }
-  shortcutToast(secs > 0 ? `⏩ +${secs}s` : `⏪ ${secs}s`);
+  shortcutToast(secs > 0 ? `+${secs}s` : `${secs}s`);
 }
 
 document.addEventListener('keydown', (e) => {
@@ -4964,7 +4920,7 @@ document.addEventListener('keydown', (e) => {
           showTab('tab-controls');
           inp.focus();
           inp.select();
-          shortcutToast('🔍 Buscar…');
+          shortcutToast('Buscar');
         }
       }
       break;
@@ -4974,7 +4930,7 @@ document.addEventListener('keydown', (e) => {
       if (inRoom) {
         e.preventDefault();
         togglePlayPause();
-        shortcutToast(isPlaying ? '⏸ Pausa' : '▶ Play');
+        shortcutToast(isPlaying ? 'Pausa' : 'Play');
       }
       break;
 
@@ -4984,7 +4940,7 @@ document.addEventListener('keydown', (e) => {
       if (inRoom) {
         e.preventDefault();
         sendCmd('mute');
-        shortcutToast(muted ? '🔊 Sin silencio' : '🔇 Silenciado');
+        shortcutToast(muted ? 'Silenciado' : 'Con sonido');
       }
       break;
 
@@ -4994,7 +4950,7 @@ document.addEventListener('keydown', (e) => {
       if (inRoom) {
         e.preventDefault();
         sendCmd('next');
-        shortcutToast('⏭ Siguiente');
+        shortcutToast('Siguiente');
       }
       break;
 
@@ -5003,7 +4959,7 @@ document.addEventListener('keydown', (e) => {
       if (inRoom) {
         e.preventDefault();
         sendCmd('prev');
-        shortcutToast('⏮ Anterior');
+        shortcutToast('Anterior');
       }
       break;
 
