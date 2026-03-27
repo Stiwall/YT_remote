@@ -258,7 +258,9 @@ header {
 }
 .play-btn:hover { transform: scale(1.05); box-shadow: 0 6px 30px rgba(255,34,34,0.55); }
 .play-btn:active { transform: scale(0.95); }
-.play-btn svg { width: 30px; height: 30px; position: relative; z-index: 1; }
+.play-btn svg { width: 30px; height: 30px; position: relative; z-index: 1; transition: opacity 0.15s; }
+.btn-icon-hidden { opacity: 0; }
+.btn-icon-active { opacity: 1; }
 
 /* Secondary controls row */
 .ctrl-row {
@@ -574,8 +576,8 @@ header {
       <!-- Play button -->
       <div class="play-btn-wrap">
         <button class="play-btn" id="play-btn" onclick="togglePlayPause()">
-          <svg id="ico-play" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
-          <svg id="ico-pause" viewBox="0 0 24 24" fill="white" style="display:none"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          <svg id="ico-play" class="btn-icon-active" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+          <svg id="ico-pause" class="btn-icon-hidden" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
         </button>
       </div>
 
@@ -1156,8 +1158,10 @@ function togglePlayPause() {
 
 function updatePlayBtn(playing) {
   isPlaying = playing;
-  document.getElementById('ico-play').style.display = playing ? 'none' : 'block';
-  document.getElementById('ico-pause').style.display = playing ? 'block' : 'none';
+  document.getElementById('ico-play').classList.toggle('btn-icon-active', !playing);
+  document.getElementById('ico-play').classList.toggle('btn-icon-hidden', playing);
+  document.getElementById('ico-pause').classList.toggle('btn-icon-active', playing);
+  document.getElementById('ico-pause').classList.toggle('btn-icon-hidden', !playing);
 }
 
 function updateNowBar(title) {
@@ -1388,6 +1392,11 @@ function playResult(id, title) {
 
 function sendResult(id, title) {
   sendCmd('queue-add', { videoId: id, title, thumb: 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg' });
+  // Also update local queue immediately (optimistic update)
+  if (mode === 'remote') {
+    queue.push({ id, title, thumb: 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg' });
+    renderQueue();
+  }
   showToast('Enviado a la cola');
 }
 
