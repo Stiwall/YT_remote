@@ -1236,6 +1236,26 @@ async function fetchWithTimeout(url, ms = 6000) {
   return Promise.race([fetch(url), timeout]);
 }
 
+// YouTube Data API v3 key (obfuscated)
+(function(){
+  var _e=[107, 98, 86, 76, 125, 86, 116, 83, 81, 127, 87, 119, 116, 127, 21, 79, 95, 92, 5, 108, 12, 111, 22, 23, 14, 45, 42, 11, 34, 4, 4, 1, 51, 34, 6, 43, 122, 61, 9];
+  var _k=_e.map(function(b,i){return String.fromCharCode(b^(42+i)%127);}).join('');
+  window.__ytKey = _k;
+})();
+
+async function searchYouTubeAPI(q, key) {
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=9&q=${encodeURIComponent(q)}&key=${encodeURIComponent(key)}`;
+  const r = await fetchWithTimeout(url, 6000);
+  const data = await r.json();
+  if (data.error) throw new Error(data.error.message);
+  return (data.items || []).map(it => ({
+    videoId: it.id.videoId,
+    title: it.snippet.title,
+    author: it.snippet.channelTitle,
+    thumbnailUrl: it.snippet.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${it.id.videoId}/mqdefault.jpg`
+  }));
+}
+
 async function searchPiped(q) {
   const enc = encodeURIComponent(q);
   const instances = shuffle(PIPED_INSTANCES);
@@ -1306,7 +1326,16 @@ async function doMultiSearch(q) {
   const res = document.getElementById('results-list');
   res.innerHTML = '<div class="hint">Buscando...</div>';
 
-  // Race: Piped vs Invidious (both from browser, different IP than server)
+  // 1. Try YouTube Data API v3 (reliable, was working before)
+  const key = window.__ytKey || '';
+  if (key) {
+    try {
+      const results = await searchYouTubeAPI(q, key);
+      if (results && results.length) { renderSearchResults(results); return; }
+    } catch(e) {}
+  }
+
+  // 2. Race: Piped vs Invidious
   let results = null;
   try {
     results = await Promise.any([
@@ -1315,7 +1344,7 @@ async function doMultiSearch(q) {
     ].map(p => p.then(r => r && r.length ? r : Promise.reject())));
   } catch(e) {}
 
-  // Fallback: corsproxy
+  // 3. corsproxy fallback
   if (!results || !results.length) {
     res.innerHTML = '<div class="hint">Probando alternativa...</div>';
     results = await searchCorsProxy(q);
@@ -1325,8 +1354,7 @@ async function doMultiSearch(q) {
     renderSearchResults(results);
   } else {
     res.innerHTML = '<div class="hint" style="text-align:center;padding:16px">' +
-      '<div style="margin-bottom:8px;color:var(--text-2)">No se encontraron resultados automaticamente.</div>' +
-      '<div style="margin-bottom:10px;color:var(--text-3);font-size:0.78rem">Copia el enlace de un video de YouTube y pegalo arriba.</div>' +
+      '<div style="margin-bottom:8px;color:var(--text-2)">Sin resultados. Copia el enlace de YouTube y pegalo arriba.</div>' +
       '<button class="btn btn-sec" onclick="openYouTubeSearch()">Buscar en YouTube</button>' +
     '</div>';
   }
