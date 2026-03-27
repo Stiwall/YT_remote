@@ -1029,17 +1029,8 @@ function initPeer() {
     port: 443,
     path: '/',
     secure: true,
-    debug: 0,
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' }
-      ],
-      iceTransportPolicy: 'all'
-    }
+    debug: 2,
+    key: 'peerjs'
   };
 
   try { peer = new Peer(myId, options); }
