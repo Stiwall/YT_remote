@@ -897,23 +897,19 @@ function initHostFB(){
     if(stored&&stored!==roomPassword){showToast('Contraseña incorrecta');leaveRoom();return;}
     if(roomPassword&&!stored)roomRef.child('password').set(roomPassword);
 
-    // Limpiar comandos viejos al entrar
-    roomRef.child('cmds').remove();
-
-    // Presencia
+    // Limpiar comandos viejos al entrar, luego escuchar los nuevos
     const presRef=roomRef.child('hostOnline');
     presRef.set(true);
     presRef.onDisconnect().set(false);
 
-    // Solo escuchar comandos NUEVOS (posteriores al momento de unirse)
-    const joinTime=Date.now();
-    const cmdsRef=roomRef.child('cmds').orderByChild('_t').startAt(joinTime);
-    listen(cmdsRef,'child_added',snap=>{
-      const cmd=snap.val();
-      if(!cmd)return;
-      if((cmd._t||0)<joinTime){snap.ref.remove();return;}
-      handleHostCmd(cmd);
-      snap.ref.remove();
+    roomRef.child('cmds').remove().then(()=>{
+      const cmdsRef=roomRef.child('cmds');
+      listen(cmdsRef,'child_added',snap=>{
+        const cmd=snap.val();
+        if(!cmd)return;
+        handleHostCmd(cmd);
+        snap.ref.remove();
+      });
     });
 
     // Contar remotes
@@ -1037,13 +1033,13 @@ function applyState(s){
 
 /* ── Host publica estado ── */
 function broadcastState(){
-  if(!ytReady||mode!=='host')return;
+  if(mode!=='host')return;
   const state={
     videoId:currentVideoId,title:currentTitle,
     playing:isPlaying,
-    time:ytPlayer.getCurrentTime(),
-    duration:ytPlayer.getDuration(),
-    volume:ytPlayer.getVolume(),
+    time:ytReady?ytPlayer.getCurrentTime():0,
+    duration:ytReady?ytPlayer.getDuration():0,
+    volume:ytReady?ytPlayer.getVolume():100,
     queue,_t:Date.now()
   };
   if(roomRef)roomRef.child('state').set(state);
@@ -1245,8 +1241,8 @@ function queuePlay(i){
 }
 function queueDel(i){queue.splice(i,1);renderQueue();sendCmd('queue-remove',{index:i});}
 function clearQueue(){queue=[];renderQueue();sendCmd('queue-clear');}
-function hostQueuePlay(i){const v=queue.splice(i,1)[0];loadVideo(v.id,v.title);hostRenderQueue();}
-function hostQueueDel(i){queue.splice(i,1);hostRenderQueue();sendCmd('queue-remove',{index:i});}
+function hostQueuePlay(i){const v=queue.splice(i,1)[0];loadVideo(v.id,v.title);renderQueue();hostRenderQueue();broadcastState();}
+function hostQueueDel(i){queue.splice(i,1);renderQueue();hostRenderQueue();broadcastState();}
 
 /* ── History ── */
 function addToHistory(id,title){

@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════
 //  YT Remote — Service Worker v5
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME  = 'ytremote-v13';
+const CACHE_NAME  = 'ytremote-v14';
 const CACHE_URLS  = [
   './',
   './index.html',
