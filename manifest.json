@@ -3,7 +3,7 @@
   "short_name": "YT Remote",
   "id": "yt-remote-v1",
   "description": "Controla YouTube desde cualquier dispositivo",
-  "start_url": "./app.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0f0f0f",

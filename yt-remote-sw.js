@@ -1,16 +1,15 @@
 // ═══════════════════════════════════════════════════════
 //  YT Remote — Service Worker v5
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME  = 'ytremote-v6';
+const CACHE_NAME  = 'ytremote-v7';
 const CACHE_URLS  = [
   './',
-  './app.html',
+  './index.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js'
 ];
 
 // Instalar
