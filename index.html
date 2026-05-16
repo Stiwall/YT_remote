@@ -359,8 +359,6 @@ header{
 </div>
 
 <!-- DEBUG PANEL -->
-<div id="debug-panel" style="display:none;position:fixed;top:60px;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:12px;padding:10px;max-height:50vh;overflow-y:auto;border-bottom:2px solid #0f0"></div>
-<button onclick="var p=document.getElementById('debug-panel');p.style.display=p.style.display==='none'?'block':'none'" style="position:fixed;top:10px;right:60px;z-index:10000;background:#0f0;color:#000;border:none;font-size:12px;font-weight:bold;padding:6px 12px;border-radius:20px;cursor:pointer">DBG</button>
 
 <!-- HOST SCREEN -->
 <div id="screen-host" class="screen">
@@ -730,7 +728,7 @@ let addToPlVideo = null;
 function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function uid(){return Math.random().toString(36).slice(2,10);}
 function fmtTime(s){s=Math.floor(s||0);const m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
-function dbg(msg){
+function {
   const p=document.getElementById('debug-panel');
   if(!p)return;
   const t=new Date().toLocaleTimeString('es',{hour12:false});
@@ -863,10 +861,10 @@ function closeNewRoomModal(){document.getElementById('new-room-modal').classList
    FIREBASE — Capa de comunicación
    ══════════════════════════════════════════════════════ */
 function initFirebase(){
-  dbg('initFirebase mode='+mode+' room='+roomCode);
+  
   if(!fbApp){
-    try{fbApp=firebase.initializeApp(FB_CONFIG);dbg('Firebase init OK');}
-    catch(e){dbg('Firebase init err: '+e.message);fbApp=firebase.app();}
+    try{fbApp=firebase.initializeApp(FB_CONFIG);}
+    catch(e){fbApp=firebase.app();}
   }
   db=firebase.database();
   roomRef=db.ref('rooms/'+roomCode);
@@ -898,8 +896,8 @@ function initHostFB(){
       const cmd=snap.val();
       if(!cmd)return;
       const age=Date.now()-(cmd._t||0);
-      dbg('CMD recibido: '+cmd.type+' age='+age+'ms ytReady='+ytReady);
-      if(age>30000){dbg('CMD descartado (muy viejo)');snap.ref.remove();return;}
+      
+      if(age>30000){');snap.ref.remove();return;}
       handleHostCmd(cmd);
       snap.ref.remove();
     });
@@ -959,8 +957,8 @@ function initBC(){
 /* ── Remote envía comando al host ── */
 function sendCmd(type,data={}){
   const msg={type,...data,_t:Date.now()};
-  dbg('sendCmd: '+type+(data.videoId?' vid='+data.videoId:''));
-  if(db&&roomCode)db.ref('rooms/'+roomCode+'/cmds').push(msg).then(()=>dbg('CMD enviado OK')).catch(e=>dbg('CMD error: '+e.message));
+  );
+  if(db&&roomCode)db.ref('rooms/'+roomCode+'/cmds').push(msg).then(()=>).catch(e=>);
   if(bc)bc.postMessage(msg);
 }
 
@@ -1034,10 +1032,10 @@ function onYouTubeIframeAPIReady(){
     events:{
       onReady:()=>{
         ytReady=true;
-        dbg('ytPlayer READY');
+        
         document.getElementById('host-placeholder').style.display='none';
         startProgressPolling();
-        if(pendingLoad){dbg('ejecutando pendingLoad: '+pendingLoad.videoId);loadVideo(pendingLoad.videoId,pendingLoad.title);pendingLoad=null;}
+        if(pendingLoad){loadVideo(pendingLoad.videoId,pendingLoad.title);pendingLoad=null;}
       },
       onStateChange:(e)=>{
         if(e.data===YT.PlayerState.ENDED)onVideoEnded();
@@ -1049,12 +1047,12 @@ function onYouTubeIframeAPIReady(){
   });
 }
 function loadYouTubeAPI(){
-  dbg('loadYouTubeAPI...');
+  
   const old=document.getElementById('yt-api');if(old)old.remove();
   window.onYouTubeIframeAPIReady=onYouTubeIframeAPIReady;
   const s=document.createElement('script');s.id='yt-api';
   s.src='https://www.youtube.com/iframe_api';
-  s.onerror=()=>dbg('ERROR: no se pudo cargar YouTube API');
+  s.onerror=()=>
   document.head.appendChild(s);
 }
 function loadVideo(id,title){
