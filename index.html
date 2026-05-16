@@ -700,6 +700,7 @@ let bc = null;
 
 let ytPlayer = null;
 let ytReady = false;
+let pendingLoad = null; // {videoId, title} — queued if player not ready yet
 let isPlaying = false;
 let currentVideoId = '';
 let currentTitle = '';
@@ -887,7 +888,7 @@ function initHostFB(){
       const cmd=snap.val();
       if(!cmd)return;
       // Ignorar comandos viejos (>5s)
-      if(Date.now()-(cmd._t||0)>5000){snap.ref.remove();return;}
+      if(Date.now()-(cmd._t||0)>30000){snap.ref.remove();return;}
       handleHostCmd(cmd);
       snap.ref.remove();
     });
@@ -956,7 +957,11 @@ function handleHostCmd(cmd){
   switch(cmd.type){
     case 'play':    if(ytReady)ytPlayer.playVideo();break;
     case 'pause':   if(ytReady)ytPlayer.pauseVideo();break;
-    case 'load':    if(ytReady&&cmd.videoId)loadVideo(cmd.videoId,cmd.title);break;
+    case 'load':
+      if(cmd.videoId){
+        if(ytReady)loadVideo(cmd.videoId,cmd.title);
+        else{pendingLoad={videoId:cmd.videoId,title:cmd.title||''};loadYouTubeAPI();}
+      }break;
     case 'seek-relative':
       if(ytReady){const t=ytPlayer.getCurrentTime()+(cmd.delta||0);ytPlayer.seekTo(Math.max(0,Math.min(ytPlayer.getDuration(),t)));}break;
     case 'seek-abs':
@@ -1019,6 +1024,7 @@ function onYouTubeIframeAPIReady(){
         ytReady=true;
         document.getElementById('host-placeholder').style.display='none';
         startProgressPolling();
+        if(pendingLoad){loadVideo(pendingLoad.videoId,pendingLoad.title);pendingLoad=null;}
       },
       onStateChange:(e)=>{
         if(e.data===YT.PlayerState.ENDED)onVideoEnded();
