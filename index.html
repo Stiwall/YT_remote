@@ -358,6 +358,10 @@ header{
   </div>
 </div>
 
+<!-- DEBUG PANEL -->
+<div id="debug-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#000;color:#0f0;font-family:monospace;font-size:11px;padding:8px;max-height:180px;overflow-y:auto;border-top:2px solid #0f0"></div>
+<button onclick="document.getElementById('debug-panel').style.display=document.getElementById('debug-panel').style.display==='none'?'block':'none'" style="position:fixed;bottom:0;right:0;z-index:10000;background:#111;color:#0f0;border:1px solid #0f0;font-size:10px;padding:4px 8px;cursor:pointer">DEBUG</button>
+
 <!-- HOST SCREEN -->
 <div id="screen-host" class="screen">
   <div class="host-player">
@@ -726,6 +730,14 @@ let addToPlVideo = null;
 function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function uid(){return Math.random().toString(36).slice(2,10);}
 function fmtTime(s){s=Math.floor(s||0);const m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
+function dbg(msg){
+  const p=document.getElementById('debug-panel');
+  if(!p)return;
+  const t=new Date().toLocaleTimeString('es',{hour12:false});
+  p.innerHTML+=`<div>[${t}] ${msg}</div>`;
+  p.scrollTop=p.scrollHeight;
+  console.log('[DBG]',msg);
+}
 function showToast(msg,dur=2600){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
@@ -851,12 +863,10 @@ function closeNewRoomModal(){document.getElementById('new-room-modal').classList
    FIREBASE — Capa de comunicación
    ══════════════════════════════════════════════════════ */
 function initFirebase(){
+  dbg('initFirebase mode='+mode+' room='+roomCode);
   if(!fbApp){
-    try{fbApp=firebase.initializeApp(FB_CONFIG);}
-    catch(e){
-      // Ya inicializado
-      fbApp=firebase.app();
-    }
+    try{fbApp=firebase.initializeApp(FB_CONFIG);dbg('Firebase init OK');}
+    catch(e){dbg('Firebase init err: '+e.message);fbApp=firebase.app();}
   }
   db=firebase.database();
   roomRef=db.ref('rooms/'+roomCode);
@@ -887,8 +897,9 @@ function initHostFB(){
     listen(cmdsRef,'child_added',snap=>{
       const cmd=snap.val();
       if(!cmd)return;
-      // Ignorar comandos viejos (>5s)
-      if(Date.now()-(cmd._t||0)>30000){snap.ref.remove();return;}
+      const age=Date.now()-(cmd._t||0);
+      dbg('CMD recibido: '+cmd.type+' age='+age+'ms ytReady='+ytReady);
+      if(age>30000){dbg('CMD descartado (muy viejo)');snap.ref.remove();return;}
       handleHostCmd(cmd);
       snap.ref.remove();
     });
@@ -948,7 +959,8 @@ function initBC(){
 /* ── Remote envía comando al host ── */
 function sendCmd(type,data={}){
   const msg={type,...data,_t:Date.now()};
-  if(db&&roomCode)db.ref('rooms/'+roomCode+'/cmds').push(msg);
+  dbg('sendCmd: '+type+(data.videoId?' vid='+data.videoId:''));
+  if(db&&roomCode)db.ref('rooms/'+roomCode+'/cmds').push(msg).then(()=>dbg('CMD enviado OK')).catch(e=>dbg('CMD error: '+e.message));
   if(bc)bc.postMessage(msg);
 }
 
@@ -1022,9 +1034,10 @@ function onYouTubeIframeAPIReady(){
     events:{
       onReady:()=>{
         ytReady=true;
+        dbg('ytPlayer READY');
         document.getElementById('host-placeholder').style.display='none';
         startProgressPolling();
-        if(pendingLoad){loadVideo(pendingLoad.videoId,pendingLoad.title);pendingLoad=null;}
+        if(pendingLoad){dbg('ejecutando pendingLoad: '+pendingLoad.videoId);loadVideo(pendingLoad.videoId,pendingLoad.title);pendingLoad=null;}
       },
       onStateChange:(e)=>{
         if(e.data===YT.PlayerState.ENDED)onVideoEnded();
@@ -1036,10 +1049,12 @@ function onYouTubeIframeAPIReady(){
   });
 }
 function loadYouTubeAPI(){
+  dbg('loadYouTubeAPI...');
   const old=document.getElementById('yt-api');if(old)old.remove();
   window.onYouTubeIframeAPIReady=onYouTubeIframeAPIReady;
   const s=document.createElement('script');s.id='yt-api';
   s.src='https://www.youtube.com/iframe_api';
+  s.onerror=()=>dbg('ERROR: no se pudo cargar YouTube API');
   document.head.appendChild(s);
 }
 function loadVideo(id,title){
