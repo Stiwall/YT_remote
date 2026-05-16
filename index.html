@@ -897,29 +897,38 @@ function initHostFB(){
     if(stored&&stored!==roomPassword){showToast('Contraseña incorrecta');leaveRoom();return;}
     if(roomPassword&&!stored)roomRef.child('password').set(roomPassword);
 
-    // Presencia del host
+    // Limpiar comandos viejos al entrar
+    roomRef.child('cmds').remove();
+
+    // Presencia
     const presRef=roomRef.child('hostOnline');
     presRef.set(true);
     presRef.onDisconnect().set(false);
-    roomRef.child('cmds').onDisconnect().remove();
 
-    // Escuchar comandos del remote (child_added)
-    const cmdsRef=roomRef.child('cmds');
+    // Solo escuchar comandos NUEVOS (posteriores al momento de unirse)
+    const joinTime=Date.now();
+    const cmdsRef=roomRef.child('cmds').orderByChild('_t').startAt(joinTime);
     listen(cmdsRef,'child_added',snap=>{
       const cmd=snap.val();
       if(!cmd)return;
-      const age=Date.now()-(cmd._t||0);
-      
-      if(age>30000){snap.ref.remove();return;}
+      if((cmd._t||0)<joinTime){snap.ref.remove();return;}
       handleHostCmd(cmd);
       snap.ref.remove();
     });
 
-    // Contar remotes conectados
+    // Contar remotes
     listen(roomRef.child('remotes'),'value',snap=>{
       const n=snap.numChildren();
       setStatus(n>0?'green':'yellow',n>0?`${n} control${n>1?'es':''} conectado${n>1?'s':''}`:'Esperando control...');
       if(n>0)setTimeout(broadcastState,400);
+    });
+
+    // Reconexión automática
+    listen(db.ref('.info/connected'),'value',snap=>{
+      if(snap.val()){
+        presRef.set(true);
+        presRef.onDisconnect().set(false);
+      }
     });
 
     setStatus('yellow','Esperando control...');
@@ -934,10 +943,18 @@ function initRemoteFB(){
     const stored=snap.val();
     if(stored&&stored!==roomPassword){showToast('Contraseña incorrecta');leaveRoom();return;}
 
-    // Presencia del remote
     const remRef=roomRef.child('remotes/'+myId);
-    remRef.set({joined:Date.now()});
-    remRef.onDisconnect().remove();
+
+    // Re-registrar presencia en cada reconexión
+    listen(db.ref('.info/connected'),'value',connSnap=>{
+      if(connSnap.val()){
+        remRef.set({joined:Date.now()});
+        remRef.onDisconnect().remove();
+        setStatus('green','Conectado');
+      } else {
+        setStatus('red','Reconectando...');
+      }
+    });
 
     // Escuchar estado del host
     listen(roomRef.child('state'),'value',snap=>{
@@ -945,13 +962,12 @@ function initRemoteFB(){
       if(s)applyState(s);
     });
 
-    // Monitorear presencia del host
+    // Presencia del host
     listen(roomRef.child('hostOnline'),'value',snap=>{
       const on=snap.val();
-      setStatus(on?'green':'red',on?'Conectado':'Pantalla desconectada');
+      if(on!==null)setStatus(on?'green':'red',on?'Conectado':'Pantalla desconectada');
     });
 
-    setStatus('green','Conectado');
     showToast('¡Conectado!');
   });
 }
