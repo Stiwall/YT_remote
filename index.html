@@ -412,6 +412,27 @@ header{
       <input type="range" id="host-vol-slider" min="0" max="100" value="100" oninput="hostSetVol(this.value)">
       <span class="vol-val" id="host-vol-val">100%</span>
     </div>
+    <!-- Búsqueda en pantalla -->
+    <div class="q-section">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="section-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Buscar
+        </div>
+        <button class="btn-icon-sm" onclick="toggleHostSearch()">
+          <svg id="host-search-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+      <div id="host-search-panel" style="display:none;margin-top:10px">
+        <div class="search-bar" style="margin-bottom:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="host-search-input" type="search" placeholder="Buscar o pegar URL..." oninput="onHostSearchInput(this.value)" onkeydown="if(event.key==='Enter')doHostSearch()">
+          <button class="search-clear" id="host-search-clear" onclick="clearHostSearch()">✕</button>
+        </div>
+        <button class="btn" style="width:100%;margin-bottom:10px" onclick="doHostSearch()">Buscar</button>
+        <div id="host-results-container"></div>
+      </div>
+    </div>
     <div class="q-section">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="section-label">
@@ -1257,6 +1278,50 @@ async function ft(url,ms=6000){return Promise.race([fetch(url),new Promise((_,r)
 
 function onSearchInput(v){document.getElementById('search-clear').classList.toggle('show',!!v.trim());}
 function clearSearch(){document.getElementById('search-input').value='';document.getElementById('search-clear').classList.remove('show');document.getElementById('results-container').innerHTML='';}
+
+/* ── Host search ── */
+function toggleHostSearch(){
+  const p=document.getElementById('host-search-panel');
+  const a=document.getElementById('host-search-arrow');
+  const open=p.style.display==='none';
+  p.style.display=open?'block':'none';
+  a.style.transform=open?'rotate(180deg)':'';
+}
+function onHostSearchInput(v){document.getElementById('host-search-clear').classList.toggle('show',!!v.trim());}
+function clearHostSearch(){document.getElementById('host-search-input').value='';document.getElementById('host-search-clear').classList.remove('show');document.getElementById('host-results-container').innerHTML='';}
+function doHostSearch(){
+  const q=document.getElementById('host-search-input').value.trim();if(!q)return;
+  const vid=extractVideoId(q);
+  if(vid){loadVideo(vid,'');return;}
+  multiHostSearch(q);
+}
+async function multiHostSearch(q){
+  const rc=document.getElementById('host-results-container');
+  rc.innerHTML='<div class="results-grid">'+Array(4).fill(0).map(()=>'<div class="skel-card"><div class="skel-thumb skeleton"></div><div class="skel-body"><div class="skel-line skeleton"></div><div class="skel-line-sm skeleton"></div></div></div>').join('')+'</div>';
+  let results=null;
+  const key=window.__ytKey||'';
+  if(key){try{results=await searchYTAPI(q,key);if(!results?.length)results=null;}catch{}}
+  if(!results){try{results=await Promise.any([searchPiped(q),searchInvidious(q)].map(p=>p.then(r=>r?.length?r:Promise.reject())));}catch{}}
+  if(results?.length){
+    rc.innerHTML='<div class="results-grid">'+results.map(it=>{
+      if(!it.videoId)return'';
+      const {videoId:id,title='Video',author='',thumbnailUrl}=it;
+      const thumb=thumbnailUrl||`https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+      return`<div class="result-card">
+        <img src="${h(thumb)}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${id}/mqdefault.jpg'">
+        <div class="result-card-body">
+          <div class="result-card-title">${h(title)}</div>
+          <div class="result-card-ch">${h(author)}</div>
+          <div class="result-card-actions">
+            <button onclick="loadVideo('${id}','${h(title)}')">Reproducir</button>
+            <button onclick="addResult('${id}','${h(title)}')">+ Cola</button>
+          </div>
+        </div></div>`;
+    }).join('')+'</div>';
+  } else {
+    rc.innerHTML='<div class="empty-state">Sin resultados. Pega el enlace directamente.</div>';
+  }
+}
 function extractVideoId(url){const m=url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null;}
 function extractPlaylistId(url){const m=url.match(/[?&]list=([a-zA-Z0-9_-]+)/);return m?m[1]:null;}
 
