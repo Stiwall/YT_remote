@@ -902,14 +902,13 @@ function initHostFB(){
     presRef.set(true);
     presRef.onDisconnect().set(false);
 
-    roomRef.child('cmds').remove().then(()=>{
-      const cmdsRef=roomRef.child('cmds');
-      listen(cmdsRef,'child_added',snap=>{
-        const cmd=snap.val();
-        if(!cmd)return;
-        handleHostCmd(cmd);
-        snap.ref.remove();
-      });
+    // Limpiar cmds viejos y escuchar nuevos inmediatamente
+    roomRef.child('cmds').remove();
+    listen(roomRef.child('cmds'),'child_added',snap=>{
+      const cmd=snap.val();
+      if(!cmd)return;
+      handleHostCmd(cmd);
+      snap.ref.remove();
     });
 
     // Contar remotes
