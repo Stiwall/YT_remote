@@ -1408,8 +1408,14 @@ async function importPlaylistById(plId,defaultName){
 window.onload=()=>{
   loadPlaylists();
   const p=new URLSearchParams(window.location.search);
-  if(p.get('room'))document.getElementById('room-input').value=p.get('room').toUpperCase();
-  if(p.get('mode')==='remote')setMode('remote');
+  const roomParam=p.get('room');
+  const modeParam=p.get('mode');
+  if(roomParam){
+    document.getElementById('room-input').value=roomParam.toUpperCase();
+    if(modeParam==='remote')setMode('remote');
+    // Auto-join si viene del link/QR
+    setTimeout(()=>joinRoom(),300);
+  }
   if('serviceWorker' in navigator)navigator.serviceWorker.register('yt-remote-sw.js').catch(()=>{});
   if(navigator.share)document.getElementById('share-btn').style.display='flex';
 };
