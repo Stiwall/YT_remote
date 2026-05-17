@@ -663,6 +663,11 @@ header{
         <button class="btn btn-sec" onclick="copyRoomLink()">Copiar enlace</button>
         <button class="btn btn-sec" onclick="shareRoomLink()" id="share-btn" style="display:none">Compartir</button>
       </div>
+      <div id="host-delete-btn" style="display:none;margin-top:8px;width:100%">
+        <button class="btn" onclick="confirmDeleteRoom()" style="width:100%;background:transparent;border-color:var(--border);color:var(--text-2);font-size:0.82rem">
+          🗑 Borrar sala permanentemente
+        </button>
+      </div>
     </div>
   </div>
 
@@ -871,19 +876,24 @@ function startRoom(){
   if(mode==='remote')initSwipe();
   const tvBtn=document.getElementById('tv-mode-btn');
   if(tvBtn)tvBtn.style.display=mode==='host'?'flex':'none';
+  const delBtn=document.getElementById('host-delete-btn');
+  if(delBtn)delBtn.style.display=mode==='host'?'block':'none';
   initFirebase();
   renderQueue();renderHistory();renderPlaylists();
   if(navigator.share)document.getElementById('share-btn').style.display='flex';
 }
-function leaveRoom(){
-  // Limpiar listeners
+function leaveRoom(deleteRoom=false){
   fbListeners.forEach(({ref,event,fn})=>ref.off(event,fn));
   fbListeners=[];
-  // Limpiar presencia
   if(roomRef){
     try{
-      roomRef.child(mode==='host'?'hostOnline':`remotes/${myId}`).remove();
-      if(mode==='host'){roomRef.child('state').remove();roomRef.child('cmds').remove();}
+      if(mode==='host'){
+        roomRef.child('hostOnline').set(false);
+        roomRef.child('cmds').remove();
+        if(deleteRoom)roomRef.remove(); // solo borra si se pide explícitamente
+      } else {
+        roomRef.child(`remotes/${myId}`).remove();
+      }
     }catch{}
   }
   roomRef=null;
@@ -968,6 +978,11 @@ function initFirebase(){
 function logEvent(name,params={}){
   try{firebase.analytics().logEvent(name,params);}catch{}
 }
+function confirmDeleteRoom(){
+  if(confirm('¿Borrar la sala '+roomCode+' permanentemente? Se perderá todo el contenido.')){
+    leaveRoom(true);
+  }
+}
 
 function listen(ref,event,fn){
   ref.on(event,fn);
@@ -976,21 +991,43 @@ function listen(ref,event,fn){
 
 /* ── Host Firebase ── */
 function initHostFB(){
-  roomRef.child('password').once('value',snap=>{
-    const stored=snap.val();
+  roomRef.once('value',roomSnap=>{
+    const existing=roomSnap.val();
+
+    // Verificar contraseña si la sala ya existe
+    const stored=existing?.password;
     if(stored&&stored!==roomPassword){showToast('Contraseña incorrecta');leaveRoom();return;}
     if(roomPassword&&!stored)roomRef.child('password').set(roomPassword);
 
-    // Marcar creación y auto-borrar sala completa al desconectarse
-    roomRef.child('createdAt').set(Date.now());
-    roomRef.onDisconnect().remove();
+    // Verificar expiración
+    if(existing?.createdAt&&Date.now()-existing.createdAt>86400000){
+      showToast('Sala expirada — creando nueva');
+      roomRef.remove();
+      roomRef.child('createdAt').set(Date.now());
+    } else if(!existing?.createdAt){
+      // Sala nueva
+      roomRef.child('createdAt').set(Date.now());
+    }
+    // Si existe y no expiró → conservar createdAt (no sobreescribir)
 
-    // Limpiar comandos viejos al entrar, luego escuchar los nuevos
+    // Presencia — solo hostOnline, NO borrar sala al desconectar
     const presRef=roomRef.child('hostOnline');
     presRef.set(true);
     presRef.onDisconnect().set(false);
 
-    // Limpiar cmds viejos y escuchar nuevos inmediatamente
+    // Restaurar estado previo si existe (queue, video)
+    if(existing?.state){
+      const s=existing.state;
+      if(s.q||s.queue){queue=s.q||s.queue;renderQueue();hostRenderQueue();}
+      if(s.v||s.videoId){
+        currentVideoId=s.v||s.videoId;
+        currentTitle=s.ti||s.title||currentVideoId;
+        hostUpdateNowBar(currentTitle);
+        showToast('Sala restaurada ✓');
+      }
+    }
+
+    // Limpiar cmds viejos y escuchar nuevos
     roomRef.child('cmds').remove();
     listen(roomRef.child('cmds'),'child_added',snap=>{
       const cmd=snap.val();
@@ -1008,14 +1045,11 @@ function initHostFB(){
 
     // Reconexión automática
     listen(db.ref('.info/connected'),'value',snap=>{
-      if(snap.val()){
-        presRef.set(true);
-        presRef.onDisconnect().set(false);
-      }
+      if(snap.val()){presRef.set(true);presRef.onDisconnect().set(false);}
     });
 
     setStatus('yellow','Esperando control...');
-    showToast('Sala lista: '+roomCode);
+    showToast(existing?.createdAt?'Sala reconectada: '+roomCode:'Sala lista: '+roomCode);
     loadYouTubeAPI();
   });
 }
