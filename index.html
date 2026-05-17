@@ -911,6 +911,10 @@ function initHostFB(){
     if(stored&&stored!==roomPassword){showToast('Contraseña incorrecta');leaveRoom();return;}
     if(roomPassword&&!stored)roomRef.child('password').set(roomPassword);
 
+    // Marcar creación y auto-borrar sala completa al desconectarse
+    roomRef.child('createdAt').set(Date.now());
+    roomRef.onDisconnect().remove();
+
     // Limpiar comandos viejos al entrar, luego escuchar los nuevos
     const presRef=roomRef.child('hostOnline');
     presRef.set(true);
@@ -948,6 +952,17 @@ function initHostFB(){
 
 /* ── Remote Firebase ── */
 function initRemoteFB(){
+  // Verificar que la sala existe y no expiró (24h)
+  roomRef.child('createdAt').once('value',tsSnap=>{
+    const createdAt=tsSnap.val();
+    if(createdAt&&Date.now()-createdAt>86400000){
+      showToast('Sala expirada (más de 24h)');
+      roomRef.remove();
+      leaveRoom();
+      return;
+    }
+  });
+
   roomRef.child('password').once('value',snap=>{
     const stored=snap.val();
     if(stored&&stored!==roomPassword){showToast('Contraseña incorrecta');leaveRoom();return;}
