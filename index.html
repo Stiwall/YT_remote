@@ -292,6 +292,11 @@ header{
 .modal-sheet p{font-size:0.8rem;color:var(--text-2);margin-bottom:16px}
 .drag-handle{width:36px;height:3px;background:var(--border-2);border-radius:2px;margin:0 auto 16px}
 .modal-sheet .btn-row{margin-top:14px}
+/* Modo TV */
+#screen-host.tv-mode .host-info,
+#screen-host.tv-mode .host-controls{display:none!important}
+#screen-host.tv-mode .host-player{height:100vh;padding-bottom:0}
+#screen-host.tv-mode #player{position:fixed;inset:0;width:100%;height:100%;z-index:50}
 </style>
 </head>
 <body>
@@ -303,6 +308,9 @@ header{
     <span class="logo-text">YT <span>Remote</span></span>
   </div>
   <div class="header-right">
+    <button class="icon-btn" id="tv-mode-btn" onclick="toggleTVMode()" title="Modo TV" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    </button>
     <span class="room-badge" id="header-room-badge">-----</span>
     <button class="icon-btn" onclick="leaveRoom()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -470,7 +478,7 @@ header{
 
   <!-- Tab: Control -->
   <div class="tab-pane active" id="tab-control">
-    <div class="ctrl-pad">
+    <div class="ctrl-pad" id="swipe-zone">
       <div class="now-card" id="now-card" style="display:none">
         <img class="now-thumb" id="now-thumb" src="" alt="">
         <div class="now-info">
@@ -819,6 +827,9 @@ function joinRoom(){
 function startRoom(){
   showScreen(mode==='host'?'host':'control');
   updateRoomUI();
+  if(mode==='remote')initSwipe();
+  const tvBtn=document.getElementById('tv-mode-btn');
+  if(tvBtn)tvBtn.style.display=mode==='host'?'flex':'none';
   initFirebase();
   renderQueue();renderHistory();renderPlaylists();
   if(navigator.share)document.getElementById('share-btn').style.display='flex';
@@ -1074,41 +1085,56 @@ function handleHostCmd(cmd){
 
 /* ── Remote aplica estado del host ── */
 function applyState(s){
-  currentVideoId=s.videoId||'';
-  currentTitle=s.title||'';
-  currentDuration=s.duration||0;
-  currentTime=s.time||0;
-  isPlaying=!!s.playing;
-  if(s.queue)queue=s.queue;
+  // Soporta campos comprimidos (v/ti/p/t/d/vol) y originales por compatibilidad
+  currentVideoId=s.v||s.videoId||'';
+  currentTitle=s.ti||s.title||'';
+  currentDuration=s.d||s.duration||0;
+  isPlaying=!!(s.p||s.playing);
+  if(s.q||s.queue)queue=s.q||s.queue;
+
+  // Interpolar tiempo: si está reproduciendo, compensar latencia Firebase
+  const lag=(Date.now()-(s._t||Date.now()))/1000;
+  currentTime=(s.t||s.time||0)+(isPlaying?lag:0);
+
   updatePlayBtn(isPlaying);
   updateRemoteNowBar();
   renderQueue();
   updateRemoteProgress();
-  // Sincronizar volumen en el control
-  if(s.volume!=null){
+
+  // Sincronizar volumen
+  const vol=s.vol!=null?s.vol:s.volume;
+  if(vol!=null){
     const sl=document.getElementById('vol-slider');
     const vl=document.getElementById('vol-val');
-    if(sl)sl.value=s.volume;
-    if(vl)vl.textContent=Math.round(s.volume)+'%';
+    if(sl)sl.value=vol;
+    if(vl)vl.textContent=Math.round(vol)+'%';
   }
-  // Mostrar botón skip-ad si hay anuncio
+  // Skip-ad
   const skipRemote=document.getElementById('remote-skip-ad');
-  if(skipRemote)skipRemote.style.display=(s.playing&&s.duration<=0)?'block':'none';
+  if(skipRemote)skipRemote.style.display=(isPlaying&&currentDuration<=0)?'block':'none';
 }
 
 /* ── Host publica estado ── */
-function broadcastState(){
+let _lastFBWrite=0;
+function broadcastState(force=false){
   if(mode!=='host')return;
+  const now=Date.now();
   const state={
-    videoId:currentVideoId,title:currentTitle,
-    playing:isPlaying,
-    time:ytReady?ytPlayer.getCurrentTime():0,
-    duration:ytReady?ytPlayer.getDuration():0,
-    volume:ytReady?ytPlayer.getVolume():100,
-    queue,_t:Date.now()
+    v:currentVideoId,       // comprimido: videoId→v
+    ti:currentTitle,        // title→ti
+    p:isPlaying?1:0,        // playing→p (bool→int)
+    t:ytReady?Math.floor(ytPlayer.getCurrentTime()):0,  // time→t (int)
+    d:ytReady?Math.floor(ytPlayer.getDuration()):0,     // duration→d (int)
+    vol:ytReady?Math.round(ytPlayer.getVolume()):100,   // volume→vol
+    q:queue,
+    _t:now
   };
-  if(roomRef)roomRef.child('state').set(state);
   if(bc)bc.postMessage(state);
+  // Firebase: solo en eventos forzados o cada 8s para progress
+  if(force||now-_lastFBWrite>8000){
+    if(roomRef)roomRef.child('state').set(state);
+    _lastFBWrite=now;
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1131,7 +1157,7 @@ function onYouTubeIframeAPIReady(){
         if(e.data===YT.PlayerState.ENDED)onVideoEnded();
         isPlaying=(e.data===YT.PlayerState.PLAYING);
         updatePlayBtn(isPlaying);
-        broadcastState();
+        broadcastState(true); // evento real → forzar Firebase
         // Detectar anuncio: -1 o buffering justo al inicio puede ser ad
         const skipBtn=document.getElementById('skip-ad-btn');
         if(skipBtn){
@@ -1173,7 +1199,7 @@ function loadVideo(id,title){
   document.getElementById('host-placeholder').style.display='none';
   updatePlayBtn(true);
   hostUpdateNowBar(title);
-  broadcastState();
+  broadcastState(true); // nuevo video → forzar Firebase
 }
 function onVideoEnded(){
   if(repeatMode==='one'&&ytReady){ytPlayer.seekTo(0);ytPlayer.playVideo();return;}
@@ -1213,7 +1239,7 @@ function playPrev(){
 }
 function hostSetVol(v){
   const el=document.getElementById('host-vol-val');if(el)el.textContent=v+'%';
-  if(mode==='host'&&ytReady)ytPlayer.setVolume(v);
+  if(mode==='host'&&ytReady){ytPlayer.setVolume(v);broadcastState(true);}
   else sendCmd('volume',{value:+v});
 }
 function sendVol(v){
@@ -1575,6 +1601,58 @@ async function importPlaylistById(plId,defaultName){
 }
 
 /* ── Init ── */
+/* ══════════════════════════════════════════════════════
+   GESTOS SWIPE
+   ══════════════════════════════════════════════════════ */
+function initSwipe(){
+  const zone=document.getElementById('swipe-zone');
+  if(!zone)return;
+  let sx=0,sy=0,st=0;
+  zone.addEventListener('touchstart',e=>{
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();
+  },{passive:true});
+  zone.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    const dy=e.changedTouches[0].clientY-sy;
+    const dt=Date.now()-st;
+    if(dt>400||Math.hypot(dx,dy)<40)return; // muy lento o muy corto
+    if(Math.abs(dx)>Math.abs(dy)*1.5){
+      // Horizontal → siguiente/anterior
+      if(dx<-40){sendCmd('next');showToast('▶▶ Siguiente');}
+      else if(dx>40){sendCmd('prev');showToast('◀◀ Anterior');}
+    } else {
+      // Vertical → volumen
+      const vSlider=document.getElementById('vol-slider');
+      if(!vSlider)return;
+      const cur=+vSlider.value;
+      const delta=dy<-40?10:-10;
+      const nv=Math.max(0,Math.min(100,cur+delta));
+      vSlider.value=nv;
+      sendVol(nv);
+      showToast(delta>0?'🔊 +10%':'🔉 -10%');
+    }
+  },{passive:true});
+}
+
+/* ══════════════════════════════════════════════════════
+   MODO TV
+   ══════════════════════════════════════════════════════ */
+let _tvMode=false;
+function toggleTVMode(){
+  _tvMode=!_tvMode;
+  const host=document.getElementById('screen-host');
+  const btn=document.getElementById('tv-mode-btn');
+  if(_tvMode){
+    host.classList.add('tv-mode');
+    btn.style.color='var(--accent)';
+    showToast('Modo TV activado');
+  } else {
+    host.classList.remove('tv-mode');
+    btn.style.color='';
+    showToast('Modo TV desactivado');
+  }
+}
+
 window.onload=()=>{
   loadPlaylists();
   const p=new URLSearchParams(window.location.search);
