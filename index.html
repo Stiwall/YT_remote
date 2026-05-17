@@ -9,7 +9,28 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>YT Remote</title>
+
+<!-- SEO -->
+<title>YT Remote — Controla YouTube desde tu teléfono</title>
+<meta name="description" content="Controla YouTube en cualquier pantalla desde tu teléfono. Sin cables, sin apps extra. Gratis.">
+<meta name="keywords" content="youtube remote control, controlar youtube, youtube desde telefono, remote youtube tv">
+<link rel="canonical" href="https://stiwall.github.io/YT_remote/">
+
+<!-- Open Graph (WhatsApp, Facebook, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://stiwall.github.io/YT_remote/">
+<meta property="og:title" content="YT Remote — Controla YouTube desde tu teléfono">
+<meta property="og:description" content="Convierte tu teléfono en control remoto de YouTube. Crea una sala, comparte el código y listo. Gratis, sin instalación.">
+<meta property="og:image" content="https://stiwall.github.io/YT_remote/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:locale" content="es_ES">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="YT Remote — Controla YouTube desde tu teléfono">
+<meta name="twitter:description" content="Convierte tu teléfono en control remoto de YouTube. Gratis, sin instalación.">
+<meta name="twitter:image" content="https://stiwall.github.io/YT_remote/icons/icon-512.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -292,6 +313,11 @@ header{
 .modal-sheet p{font-size:0.8rem;color:var(--text-2);margin-bottom:16px}
 .drag-handle{width:36px;height:3px;background:var(--border-2);border-radius:2px;margin:0 auto 16px}
 .modal-sheet .btn-row{margin-top:14px}
+/* How it works */
+.how-it-works{display:flex;flex-direction:column;gap:8px;margin-top:16px;text-align:left;width:100%;max-width:280px}
+.how-step{display:flex;align-items:center;gap:10px;font-size:0.85rem;color:var(--text-2)}
+.how-step b{color:var(--text-1)}
+.how-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 /* Modo TV */
 #screen-host.tv-mode .host-info,
 #screen-host.tv-mode .host-controls{display:none!important}
@@ -325,7 +351,21 @@ header{
       <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="white" stroke="none"/></svg>
     </div>
     <h1>YT Remote</h1>
-    <p>Controla YouTube desde cualquier dispositivo</p>
+    <p>Convierte tu teléfono en control remoto de YouTube</p>
+    <div class="how-it-works">
+      <div class="how-step">
+        <span class="how-num">1</span>
+        <span>Abre en la <b>pantalla</b> → elige <b>Pantalla</b></span>
+      </div>
+      <div class="how-step">
+        <span class="how-num">2</span>
+        <span>Abre en el <b>teléfono</b> → elige <b>Control</b></span>
+      </div>
+      <div class="how-step">
+        <span class="how-num">3</span>
+        <span>Usa el mismo <b>código de sala</b></span>
+      </div>
+    </div>
   </div>
   <div class="mode-sel">
     <button class="mode-btn active" id="btn-host" onclick="setMode('host')">
@@ -720,6 +760,7 @@ header{
 <!-- Firebase SDK v9 compat -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
 <!-- QR -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -916,11 +957,16 @@ function initFirebase(){
   if(!fbApp){
     try{fbApp=firebase.initializeApp(FB_CONFIG);}
     catch(e){fbApp=firebase.app();}
+    try{firebase.analytics();}catch{}
   }
   db=firebase.database();
   roomRef=db.ref('rooms/'+roomCode);
   initBC();
+  logEvent(mode==='host'?'host_join':'remote_join');
   mode==='host'?initHostFB():initRemoteFB();
+}
+function logEvent(name,params={}){
+  try{firebase.analytics().logEvent(name,params);}catch{}
 }
 
 function listen(ref,event,fn){
@@ -1199,7 +1245,8 @@ function loadVideo(id,title){
   document.getElementById('host-placeholder').style.display='none';
   updatePlayBtn(true);
   hostUpdateNowBar(title);
-  broadcastState(true); // nuevo video → forzar Firebase
+  broadcastState(true);
+  logEvent('video_play',{video_id:id});
 }
 function onVideoEnded(){
   if(repeatMode==='one'&&ytReady){ytPlayer.seekTo(0);ytPlayer.playVideo();return;}
