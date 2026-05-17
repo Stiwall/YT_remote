@@ -367,6 +367,15 @@ header{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
       <p>Envía un video desde el control</p>
     </div>
+    <div id="blocker-warning" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.92);z-index:10;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#FF0000" stroke-width="2" width="48" height="48"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p style="color:#fff;font-size:1rem;font-weight:600">YouTube bloqueado</p>
+      <p style="color:#aaa;font-size:0.85rem">Desactiva el bloqueador de anuncios<br>para este sitio y recarga la página</p>
+      <button class="btn" onclick="location.reload()" style="margin-top:4px">Recargar</button>
+    </div>
+    <div id="skip-ad-btn" style="display:none;position:absolute;bottom:12px;right:12px;z-index:20">
+      <button class="btn" onclick="skipAd()" style="background:#FF0000;border-color:#FF0000;font-size:0.8rem;padding:6px 14px">Saltar anuncio ▶</button>
+    </div>
     <div id="player"></div>
   </div>
   <div class="host-info">
@@ -486,6 +495,11 @@ header{
         <button class="ctrl-sm" onclick="sendCmd('seek-relative',{delta:10})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           <span>+10s</span>
+        </button>
+      </div>
+      <div id="remote-skip-ad" style="display:none;margin:8px 0">
+        <button class="btn" onclick="sendCmd('skip-ad')" style="width:100%;background:#FF0000;border-color:#FF0000;font-size:0.85rem">
+          ⏭ Saltar anuncio
         </button>
       </div>
       <div class="vol-row">
@@ -1013,6 +1027,7 @@ function handleHostCmd(cmd){
       queue=[];renderQueue();hostRenderQueue();break;
     case 'repeat':  repeatMode=cmd.value;renderRepeatBtn();break;
     case 'shuffle': shuffleOn=cmd.value;break;
+    case 'skip-ad': skipAd();break;
   }
 }
 
@@ -1028,6 +1043,9 @@ function applyState(s){
   updateRemoteNowBar();
   renderQueue();
   updateRemoteProgress();
+  // Mostrar botón skip-ad si hay anuncio (duración negativa o 0 mientras reproduce)
+  const skipRemote=document.getElementById('remote-skip-ad');
+  if(skipRemote)skipRemote.style.display=(s.playing&&s.duration<=0)?'block':'none';
 }
 
 /* ── Host publica estado ── */
@@ -1055,8 +1073,9 @@ function onYouTubeIframeAPIReady(){
     events:{
       onReady:()=>{
         ytReady=true;
-        
+        clearTimeout(_ytApiTimer);
         document.getElementById('host-placeholder').style.display='none';
+        document.getElementById('blocker-warning').style.display='none';
         startProgressPolling();
         if(pendingLoad){loadVideo(pendingLoad.videoId,pendingLoad.title);pendingLoad=null;}
       },
@@ -1065,18 +1084,40 @@ function onYouTubeIframeAPIReady(){
         isPlaying=(e.data===YT.PlayerState.PLAYING);
         updatePlayBtn(isPlaying);
         broadcastState();
+        // Detectar anuncio: -1 o buffering justo al inicio puede ser ad
+        const skipBtn=document.getElementById('skip-ad-btn');
+        if(skipBtn){
+          const isAd=e.data===YT.PlayerState.PLAYING&&ytPlayer.getDuration&&ytPlayer.getDuration()<0;
+          skipBtn.style.display=isAd?'block':'none';
+        }
       }
     }
   });
 }
+let _ytApiTimer=null;
 function loadYouTubeAPI(){
-  
   const old=document.getElementById('yt-api');if(old)old.remove();
   window.onYouTubeIframeAPIReady=onYouTubeIframeAPIReady;
   const s=document.createElement('script');s.id='yt-api';
   s.src='https://www.youtube.com/iframe_api';
-  s.onerror=()=>{};
+  s.onerror=()=>showBlockerWarning();
   document.head.appendChild(s);
+  // Si el player no está listo en 8s → bloqueador activo
+  clearTimeout(_ytApiTimer);
+  _ytApiTimer=setTimeout(()=>{if(!ytReady)showBlockerWarning();},8000);
+}
+function showBlockerWarning(){
+  const w=document.getElementById('blocker-warning');
+  if(w){w.style.display='flex';}
+}
+function skipAd(){
+  if(ytReady&&ytPlayer){
+    try{
+      // Avanzar al final del anuncio buscando al final del video actual
+      ytPlayer.seekTo(ytPlayer.getDuration()-1);
+    }catch(e){}
+  }
+  document.getElementById('skip-ad-btn').style.display='none';
 }
 function loadVideo(id,title){
   currentVideoId=id;currentTitle=title||id;
