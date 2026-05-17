@@ -331,7 +331,7 @@ header{
   </div>
   <div class="field">
     <label>Código de sala</label>
-    <input class="input-code" id="room-input" type="text" placeholder="Ej: CASA1" maxlength="10"
+    <input class="input-code" id="room-input" type="text" placeholder="Ej: CASA1234" maxlength="12"
       oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')joinRoom()">
   </div>
   <div class="field">
@@ -777,7 +777,7 @@ function setMode(m){
 }
 function generateCode(){
   const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s='';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];
+  let s='';for(let i=0;i<8;i++)s+=c[Math.floor(Math.random()*c.length)];
   document.getElementById('room-input').value=s;
 }
 function createAndEnter(){generateCode();setTimeout(()=>joinRoom(),50);}
@@ -800,6 +800,8 @@ function joinRoom(){
   const code=document.getElementById('room-input').value.trim().toUpperCase();
   const pw=document.getElementById('room-password').value;
   if(!code){showToast('Escribe un código');return;}
+  if(code.length<4){showToast('Código muy corto (mín. 4 caracteres)');return;}
+  if(pw&&pw.length<4){showToast('Contraseña muy corta (mín. 4 caracteres)');return;}
   roomCode=code;roomPassword=pw;inRoom=true;
   startRoom();
 }
