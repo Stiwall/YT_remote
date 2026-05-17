@@ -924,18 +924,18 @@ function toggleQR(){
   const a=document.getElementById('qr-area');
   if(a.classList.contains('show')){a.classList.remove('show');return;}
   a.classList.add('show');
-  const url=window.location.origin+'/?room='+roomCode+'&mode=remote';
+  const url=window.location.href.split('?')[0]+'?room='+roomCode+'&mode=remote';
   const c=document.getElementById('qr-canvas');c.innerHTML='';
   try{new QRCode(c,{text:url,width:160,height:160,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}
   catch{c.innerHTML='<div style="padding:16px;font-size:0.75rem;color:#333">'+url+'</div>';}
 }
 function copyCode(){navigator.clipboard.writeText(roomCode).then(()=>showToast('Código copiado ✓'));}
 function copyRoomLink(){
-  const url=window.location.origin+'/?room='+roomCode+'&mode=remote';
+  const url=window.location.href.split('?')[0]+'?room='+roomCode+'&mode=remote';
   navigator.clipboard.writeText(url).then(()=>showToast('Enlace copiado ✓'));
 }
 function shareRoomLink(){
-  const url=window.location.origin+'/?room='+roomCode+'&mode=remote';
+  const url=window.location.href.split('?')[0]+'?room='+roomCode+'&mode=remote';
   if(navigator.share)navigator.share({title:'YT Remote',text:'Únete: '+roomCode,url});
   else copyRoomLink();
 }
