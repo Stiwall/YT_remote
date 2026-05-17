@@ -358,6 +358,17 @@ header{
   </div>
 </div>
 
+<!-- PWA Banner -->
+<div id="pwa-banner" style="display:none;position:fixed;bottom:80px;left:12px;right:12px;z-index:9998;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+  <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="28" height="28" flex-shrink="0"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+  <div style="flex:1">
+    <div style="font-weight:600;font-size:0.9rem">Instalar YT Remote</div>
+    <div style="font-size:0.78rem;color:var(--text-2)">Agregar a pantalla de inicio</div>
+  </div>
+  <button class="btn btn-sec" onclick="dismissPWA()" style="padding:6px 10px;font-size:0.75rem">No</button>
+  <button class="btn" onclick="installPWA()" style="padding:6px 14px;font-size:0.75rem">Instalar</button>
+</div>
+
 <!-- DEBUG PANEL -->
 
 <!-- HOST SCREEN -->
@@ -745,7 +756,7 @@ let currentDuration = 0;
 let currentTime = 0;
 
 let queue = [];
-let history = [];
+let history = JSON.parse(localStorage.getItem('ytrem-history')||'[]');
 let playlists = [];
 
 let repeatMode = 'none'; // 'none' | 'one' | 'all'
@@ -971,12 +982,12 @@ function initRemoteFB(){
 
     const remRef=roomRef.child('remotes/'+myId);
 
-    // Re-registrar presencia en cada reconexión
+    // Re-registrar presencia en cada reconexión + medir latencia
     listen(db.ref('.info/connected'),'value',connSnap=>{
       if(connSnap.val()){
         remRef.set({joined:Date.now()});
         remRef.onDisconnect().remove();
-        setStatus('green','Conectado');
+        measureLatency();
       } else {
         setStatus('red','Reconectando...');
       }
@@ -1010,8 +1021,21 @@ function initBC(){
 }
 
 /* ── Remote envía comando al host ── */
+let _lastCmd=0;
+function measureLatency(){
+  const t=Date.now();
+  db.ref('.info/serverTimeOffset').once('value',snap=>{
+    const latency=Math.abs(snap.val()||0);
+    if(latency<300)setStatus('green','Conectado · '+latency+'ms');
+    else if(latency<800)setStatus('yellow','Señal débil · '+latency+'ms');
+    else setStatus('red','Señal mala · '+latency+'ms');
+  });
+}
 function sendCmd(type,data={}){
-  const msg={type,...data,_t:Date.now()};
+  const now=Date.now();
+  if(now-_lastCmd<200){return;}
+  _lastCmd=now;
+  const msg={type,...data,_t:now};
   if(db&&roomCode)db.ref('rooms/'+roomCode+'/cmds').push(msg).catch(()=>{});
   if(bc)bc.postMessage(msg);
 }
@@ -1060,7 +1084,14 @@ function applyState(s){
   updateRemoteNowBar();
   renderQueue();
   updateRemoteProgress();
-  // Mostrar botón skip-ad si hay anuncio (duración negativa o 0 mientras reproduce)
+  // Sincronizar volumen en el control
+  if(s.volume!=null){
+    const sl=document.getElementById('vol-slider');
+    const vl=document.getElementById('vol-val');
+    if(sl)sl.value=s.volume;
+    if(vl)vl.textContent=Math.round(s.volume)+'%';
+  }
+  // Mostrar botón skip-ad si hay anuncio
   const skipRemote=document.getElementById('remote-skip-ad');
   if(skipRemote)skipRemote.style.display=(s.playing&&s.duration<=0)?'block':'none';
 }
@@ -1304,6 +1335,7 @@ function hostQueueDel(i){queue.splice(i,1);renderQueue();hostRenderQueue();broad
 /* ── History ── */
 function addToHistory(id,title){
   history=[{id,title,time:Date.now()},...history.filter(x=>x.id!==id)].slice(0,50);
+  try{localStorage.setItem('ytrem-history',JSON.stringify(history));}catch{}
   renderHistory();
 }
 function renderHistory(){
@@ -1321,7 +1353,7 @@ function playHistory(i){
   if(mode==='host')loadVideo(v.id,v.title);
   else{sendCmd('load',{videoId:v.id,title:v.title});showToast('Enviando...');}
 }
-function clearHistory(){history=[];renderHistory();}
+function clearHistory(){history=[];localStorage.removeItem('ytrem-history');renderHistory();}
 function relTime(ts){
   const d=Date.now()-ts;
   if(d<60000)return'Ahora mismo';
@@ -1551,11 +1583,37 @@ window.onload=()=>{
   if(roomParam){
     document.getElementById('room-input').value=roomParam.toUpperCase();
     if(modeParam==='remote')setMode('remote');
-    // Auto-join si viene del link/QR
     setTimeout(()=>joinRoom(),300);
   }
   if('serviceWorker' in navigator)navigator.serviceWorker.register('yt-remote-sw.js').catch(()=>{});
   if(navigator.share)document.getElementById('share-btn').style.display='flex';
+
+  // Modo offline
+  window.addEventListener('online', ()=>showToast('Conexión restaurada ✓'));
+  window.addEventListener('offline',()=>{
+    showToast('Sin conexión — modo offline',4000);
+    if(inRoom)setStatus('red','Sin conexión');
+  });
+  if(!navigator.onLine)showToast('Sin conexión a internet',4000);
+
+  // Prompt PWA
+  let _pwaPrompt=null;
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();_pwaPrompt=e;
+    if(!localStorage.getItem('ytrem-pwa-dismissed')){
+      setTimeout(()=>{
+        const b=document.getElementById('pwa-banner');
+        if(b)b.style.display='flex';
+      },3000);
+    }
+  });
+  window.installPWA=()=>{
+    if(_pwaPrompt){_pwaPrompt.prompt();_pwaPrompt.userChoice.then(()=>{_pwaPrompt=null;document.getElementById('pwa-banner').style.display='none';});}
+  };
+  window.dismissPWA=()=>{
+    localStorage.setItem('ytrem-pwa-dismissed','1');
+    document.getElementById('pwa-banner').style.display='none';
+  };
 };
 </script>
 </body>
