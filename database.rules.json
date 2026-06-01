@@ -1,0 +1,43 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "rooms": {
+      "$roomCode": {
+        ".read": true,
+
+        "createdAt": {
+          ".write": "!data.exists() || (data.exists() && newData.isNumber() && newData.val() <= (now + 5000) && newData.val() >= (now - 5000))"
+        },
+
+        "password": {
+          ".write": "!data.exists()"
+        },
+
+        "hostOnline": {
+          ".write": "newData.isBoolean()"
+        },
+
+        "state": {
+          ".write": "true",
+          ".validate": "newData.hasChildren(['v']) || newData.hasChildren(['q']) || newData.hasChildren(['videoId']) || newData.hasChildren(['queue'])"
+        },
+
+        "cmds": {
+          "$cmdId": {
+            ".write": "true",
+            ".validate": "newData.hasChildren(['type'])"
+          }
+        },
+
+        "remotes": {
+          "$remoteId": {
+            ".write": "true",
+            ".validate": "newData.hasChildren(['joined']) && newData.child('joined').isNumber()"
+          }
+        }
+      }
+    }
+  }
+}
