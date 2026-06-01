@@ -774,6 +774,27 @@ header {
 </div>
 
 <!-- New Room Modal -->
+<div class="modal" id="share-mode-modal">
+  <div class="modal-body">
+    <h3>Compartir sala</h3>
+    <p>¿En qué modo quieres que entre quien reciba el enlace?</p>
+    <div class="mode-sel" style="margin-bottom:20px">
+      <button class="mode-btn active" id="share-btn-control" onclick="shareModeSelected='remote';updateShareModeBtns()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+        Control
+      </button>
+      <button class="mode-btn" id="share-btn-host" onclick="shareModeSelected='host';updateShareModeBtns()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Pantalla
+      </button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-sec" onclick="closeShareModeModal()">Cancelar</button>
+      <button class="btn btn-pri" id="share-mode-confirm-btn" onclick="confirmShareMode()">Continuar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="new-room-modal">
   <div class="modal-body">
     <h3>Nueva Sala</h3>
@@ -942,28 +963,69 @@ function setStatus(type, msg) {
   pill.textContent = msg;
 }
 
+/* ─── Share Mode Modal ─── */
+let shareModeSelected = 'remote';
+let shareAction = null; // 'qr' | 'copy' | 'share'
+
+function updateShareModeBtns() {
+  document.getElementById('share-btn-control').classList.toggle('active', shareModeSelected === 'remote');
+  document.getElementById('share-btn-host').classList.toggle('active', shareModeSelected === 'host');
+}
+
+function openShareModeModal(action) {
+  shareAction = action;
+  shareModeSelected = 'remote';
+  updateShareModeBtns();
+  document.getElementById('share-mode-modal').classList.add('show');
+}
+
+function closeShareModeModal() {
+  document.getElementById('share-mode-modal').classList.remove('show');
+  shareAction = null;
+}
+
+function confirmShareMode() {
+  closeShareModeModal();
+  const url = window.location.origin + '/?room=' + roomCode + '&mode=' + shareModeSelected;
+  if (shareAction === 'qr') {
+    _renderQR(url);
+  } else if (shareAction === 'copy') {
+    navigator.clipboard.writeText(url).then(() => showToast('Link copiado'));
+  } else if (shareAction === 'share') {
+    if (navigator.share) {
+      navigator.share({ title: 'YT Remote', text: 'Únete a mi sala YT Remote — ' + roomCode, url });
+    } else {
+      navigator.clipboard.writeText(url).then(() => showToast('Link copiado'));
+    }
+  }
+}
+
 /* ─── QR Code ─── */
 function toggleQR() {
   const area = document.getElementById('qr-area');
   if (area.style.display === 'none') {
-    area.style.display = 'block';
-    const url = window.location.origin + '/?room=' + roomCode + '&mode=remote';
-    const container = document.getElementById('qr-canvas');
-    container.innerHTML = '';
-    try {
-      new QRCode(container, {
-        text: url,
-        width: 160,
-        height: 160,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
-      });
-    } catch(e) {
-      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:0.8rem">No se pudo generar el QR<br><a href="' + url + '" style="color:var(--blue)">' + url + '</a></div>';
-    }
+    openShareModeModal('qr');
   } else {
     area.style.display = 'none';
+  }
+}
+
+function _renderQR(url) {
+  const area = document.getElementById('qr-area');
+  area.style.display = 'block';
+  const container = document.getElementById('qr-canvas');
+  container.innerHTML = '';
+  try {
+    new QRCode(container, {
+      text: url,
+      width: 160,
+      height: 160,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:0.8rem">No se pudo generar el QR<br><a href="' + url + '" style="color:var(--blue)">' + url + '</a></div>';
   }
 }
 
@@ -972,17 +1034,11 @@ function copyCode() {
 }
 
 function copyRoomLink() {
-  const url = window.location.origin + '/?room=' + roomCode + '&mode=remote';
-  navigator.clipboard.writeText(url).then(() => showToast('Link copiado'));
+  openShareModeModal('copy');
 }
 
 function shareRoomLink() {
-  const url = window.location.origin + '/?room=' + roomCode + '&mode=remote';
-  if (navigator.share) {
-    navigator.share({ title: 'YT Remote', text: 'Unete a mi sala YT Remote — ' + roomCode, url });
-  } else {
-    copyRoomLink();
-  }
+  openShareModeModal('share');
 }
 
 /* ─── New Room Modal ─── */
@@ -1374,7 +1430,7 @@ async function fetchWithTimeout(url, ms = 6000) {
 })();
 
 async function searchYouTubeAPI(q, key) {
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=9&q=${encodeURIComponent(q)}&key=${encodeURIComponent(key)}&relevanceLanguage=es&hl=es`;
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20&q=${encodeURIComponent(q)}&key=${encodeURIComponent(key)}&relevanceLanguage=es&hl=es`;
   const r = await fetchWithTimeout(url, 6000);
   const data = await r.json();
   if (data.error) throw new Error(data.error.message);
@@ -1396,7 +1452,7 @@ async function searchPiped(q) {
       const data = await r.json();
       const items = data.items || [];
       if (!items.length) continue;
-      return items.slice(0, 9).map(it => ({
+      return items.slice(0, 20).map(it => ({
         videoId: it.url?.replace('/watch?v=', '') || it.videoId || '',
         title: it.title || 'Sin titulo',
         author: it.uploaderName || it.uploader || '',
@@ -1412,11 +1468,11 @@ async function searchInvidious(q) {
   const instances = shuffle(INVIDIOUS_INSTANCES);
   for (const base of instances) {
     try {
-      const r = await fetchWithTimeout(`${base}/api/v1/search?q=${enc}&type=video&count=9`, 6000);
+      const r = await fetchWithTimeout(`${base}/api/v1/search?q=${enc}&type=video&count=20`, 6000);
       if (!r.ok) continue;
       const data = await r.json();
       if (!Array.isArray(data) || !data.length) continue;
-      return data.slice(0, 9).map(it => ({
+      return data.slice(0, 20).map(it => ({
         videoId: it.videoId,
         title: it.title || 'Sin titulo',
         author: it.author || '',
@@ -1433,7 +1489,7 @@ async function searchCorsProxy(q) {
     const r = await fetchWithTimeout(`https://corsproxy.io/?url=${encodeURIComponent('https://www.youtube.com/results?search_query=' + enc)}`, 8000);
     if (!r.ok) return null;
     const html = await r.text();
-    const ids = [...new Set([...html.matchAll(/\/watch\?v=([a-zA-Z0-9_-]{11})/g)].map(m => m[1]))].slice(0, 9);
+    const ids = [...new Set([...html.matchAll(/\/watch\?v=([a-zA-Z0-9_-]{11})/g)].map(m => m[1]))].slice(0, 20);
     if (!ids.length) return null;
     const results = await Promise.allSettled(
       ids.map(id =>
