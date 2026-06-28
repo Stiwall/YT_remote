@@ -128,21 +128,22 @@ header{
 .host-placeholder svg{width:44px;height:44px;opacity:0.25}
 .host-placeholder p{font-size:0.82rem}
 .host-info{padding:10px 14px;background:var(--bg-2);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px;flex-shrink:0}
-.now-bar-host{display:none;align-items:center;gap:8px}
+.now-bar-host{display:none;align-items:center;justify-content:center;gap:8px}
 .now-badge{background:var(--accent);color:#fff;font-size:0.52rem;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0}
-.now-title{flex:1;font-size:0.8rem;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.progress-wrap{display:flex;flex-direction:column;gap:3px}
-.progress-bar{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden;cursor:pointer}
-.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s linear;width:0%}
-.time-row{display:flex;justify-content:space-between;font-size:0.6rem;color:var(--text-3);font-variant-numeric:tabular-nums}
+.now-title{font-size:0.92rem;font-weight:600;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:82%}
+.progress-wrap{display:flex;flex-direction:column;gap:5px}
+.progress-bar{position:relative;width:100%;height:4px;background:rgba(255,255,255,0.18);border-radius:3px;cursor:pointer}
+.progress-fill{position:relative;height:100%;background:var(--accent);border-radius:3px;transition:width .5s linear;width:0%}
+.progress-fill::after{content:'';position:absolute;right:-1px;top:50%;width:12px;height:12px;border-radius:50%;background:var(--accent);transform:translate(50%,-50%);box-shadow:0 0 8px var(--accent-glow);pointer-events:none}
+.time-row{display:flex;justify-content:space-between;font-size:0.64rem;color:var(--text-2);font-variant-numeric:tabular-nums;font-weight:500}
 .host-controls{padding:10px 14px 14px;background:var(--bg-2);display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1}
 .play-center{display:flex;align-items:center;justify-content:center;gap:14px}
 .play-btn{width:64px;height:64px;background:var(--accent);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--t);box-shadow:0 4px 20px var(--accent-glow);flex-shrink:0}
 .play-btn:hover{transform:scale(1.06);box-shadow:0 6px 28px var(--accent-glow)}
 .play-btn:active{transform:scale(0.94)}
 .play-btn svg{width:26px;height:26px}
-.ctrl-sm{width:48px;height:48px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:var(--t);gap:2px}
-.ctrl-sm:hover{background:var(--surface-3);transform:scale(1.04)}
+.ctrl-sm{width:52px;height:52px;background:transparent;border:none;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:var(--t);gap:2px;color:var(--text)}
+.ctrl-sm:hover{background:var(--surface-2);transform:scale(1.04)}
 .ctrl-sm:active{transform:scale(0.94)}
 .ctrl-sm svg{width:17px;height:17px}
 .ctrl-sm span{font-size:0.5rem;font-weight:700;color:var(--text-3)}
@@ -159,14 +160,14 @@ header{
 .tab-pane.active{display:flex;animation:fadeIn .18s ease}
 
 /* Tab Control */
-.ctrl-pad{padding:14px;display:flex;flex-direction:column;gap:12px}
-.now-card{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px}
-.now-thumb{width:72px;height:40px;border-radius:6px;object-fit:cover;background:var(--surface-2);flex-shrink:0}
-.now-info{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:4px}
-.now-info .title{font-size:0.78rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ctrl-pad{padding:18px 14px;display:flex;flex-direction:column;gap:16px;background:radial-gradient(120% 55% at 50% 0%,rgba(255,34,34,0.09),transparent 62%)}
+.now-card{display:flex;flex-direction:column;align-items:center;gap:14px;background:transparent;border:none;border-radius:0;padding:8px 4px 2px}
+.now-thumb{width:100%;max-width:300px;aspect-ratio:16/9;height:auto;border-radius:14px;object-fit:cover;background:var(--surface-2);box-shadow:0 12px 40px rgba(0,0,0,0.55)}
+.now-info{width:100%;max-width:340px;overflow:hidden;display:flex;flex-direction:column;gap:10px}
+.now-info .title{font-size:1.02rem;font-weight:700;line-height:1.3;letter-spacing:-0.2px;text-align:center;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .section-label{font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);display:flex;align-items:center;gap:6px}
 .section-label svg{width:12px;height:12px}
-.mode-toggles{display:flex;gap:6px}
+.mode-toggles{display:flex;gap:6px;justify-content:center}
 .toggle-btn{display:flex;align-items:center;gap:5px;padding:7px 11px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-xs);cursor:pointer;transition:var(--t);font-size:0.72rem;font-weight:600;color:var(--text-3);font-family:inherit}
 .toggle-btn svg{width:13px;height:13px}
 .toggle-btn.on{background:var(--accent-dim);border-color:rgba(255,34,34,0.35);color:var(--accent)}
@@ -505,7 +506,7 @@ header{
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="section-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>
-          Cola <span class="q-count-badge" id="host-queue-count">0</span>
+          A continuación <span class="q-count-badge" id="host-queue-count">0</span>
         </div>
       </div>
       <div class="q-list" id="host-queue-list"><div class="q-empty">La cola está vacía</div></div>
@@ -575,12 +576,16 @@ header{
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
           <span id="repeat-label">Repetir</span>
         </button>
+        <button class="toggle-btn on" id="btn-autoplay" onclick="toggleAutoplay()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.178 8c1.014 0 1.84.82 1.84 1.83v4.34c0 1.01-.826 1.83-1.84 1.83-.51 0-.998-.21-1.348-.58l-2.06-2.17a1.83 1.83 0 0 1 0-2.5l2.06-2.17c.35-.37.838-.58 1.348-.58Z"/><path d="M5.822 8c-1.014 0-1.84.82-1.84 1.83v4.34c0 1.01.826 1.83 1.84 1.83.51 0 .998-.21 1.348-.58l2.06-2.17a1.83 1.83 0 0 0 0-2.5L7.17 8.58A1.86 1.86 0 0 0 5.822 8Z"/></svg>
+          <span>Autoplay</span>
+        </button>
       </div>
       <div class="q-section">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div class="section-label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>
-            Cola <span class="q-count-badge" id="queue-count">0</span>
+            A continuación <span class="q-count-badge" id="queue-count">0</span>
           </div>
           <button class="btn btn-sec btn-xs" onclick="clearQueue()">Limpiar</button>
         </div>
@@ -815,6 +820,7 @@ let playlists = [];
 
 let repeatMode = 'none'; // 'none' | 'one' | 'all'
 let shuffleOn = false;
+let autoplayOn = true; // autoplay/radio estilo YouTube Music: al vaciarse la cola sigue con relacionados
 let progressInterval = null;
 let addToPlVideo = null;
 
@@ -1159,6 +1165,7 @@ function handleHostCmd(cmd){
       queue=[];renderQueue();hostRenderQueue();break;
     case 'repeat':  repeatMode=cmd.value;renderRepeatBtn();break;
     case 'shuffle': shuffleOn=cmd.value;break;
+    case 'autoplay':autoplayOn=cmd.value;renderAutoplayBtn();break;
     case 'skip-ad': skipAd();break;
   }
 }
@@ -1289,7 +1296,38 @@ function onVideoEnded(){
     const v=queue.splice(idx,1)[0];loadVideo(v.id,v.title);renderQueue();hostRenderQueue();
   }else if(repeatMode==='all'&&history.length){
     loadVideo(history[0].id,history[0].title);
+  }else if(autoplayOn){
+    playRelated();
   }
+}
+/* Autoplay/radio: busca un video relacionado al actual y lo reproduce (best-effort) */
+async function playRelated(){
+  if(!currentVideoId)return;
+  const seen=new Set(history.slice(0,8).map(h=>h.id));seen.add(currentVideoId);
+  const pick=(arr,getId,getTitle)=>{for(const x of arr){const id=getId(x);if(id&&!seen.has(id))return{id,title:getTitle(x)||id};}return null;};
+  let cand=null;
+  for(const base of shuffleArr(PIPED)){
+    try{
+      const c=new AbortController();const to=setTimeout(()=>c.abort(),5000);
+      const r=await fetch(`${base}/streams/${currentVideoId}`,{signal:c.signal});clearTimeout(to);
+      if(!r.ok)continue;
+      const d=await r.json();
+      const rel=(d.relatedStreams||[]).filter(x=>x.type==='stream'&&x.url);
+      cand=pick(rel,x=>x.url.replace('/watch?v=',''),x=>x.title);
+      if(cand)break;
+    }catch(e){}
+  }
+  if(!cand)for(const base of shuffleArr(INVIDIOUS)){
+    try{
+      const c=new AbortController();const to=setTimeout(()=>c.abort(),5000);
+      const r=await fetch(`${base}/api/v1/videos/${currentVideoId}`,{signal:c.signal});clearTimeout(to);
+      if(!r.ok)continue;
+      const d=await r.json();
+      cand=pick(d.recommendedVideos||[],x=>x.videoId,x=>x.title);
+      if(cand)break;
+    }catch(e){}
+  }
+  if(cand)loadVideo(cand.id,cand.title);
 }
 function togglePlayPause(){
   if(mode==='host'&&ytReady){isPlaying?ytPlayer.pauseVideo():ytPlayer.playVideo();}
@@ -1375,11 +1413,20 @@ function remoteSeekClick(e){
   sendCmd('seek-abs',{time:(e.offsetX/e.currentTarget.offsetWidth)*currentDuration});
 }
 
-/* ── Shuffle / Repeat ── */
+/* ── Shuffle / Repeat / Autoplay ── */
 function toggleShuffle(){
   shuffleOn=!shuffleOn;
   document.getElementById('btn-shuffle').classList.toggle('on',shuffleOn);
   sendCmd('shuffle',{value:shuffleOn});
+}
+function toggleAutoplay(){
+  autoplayOn=!autoplayOn;
+  renderAutoplayBtn();
+  sendCmd('autoplay',{value:autoplayOn});
+}
+function renderAutoplayBtn(){
+  const b=document.getElementById('btn-autoplay');
+  if(b)b.classList.toggle('on',autoplayOn);
 }
 function cycleRepeat(){
   const m=['none','one','all'];
