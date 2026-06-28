@@ -160,11 +160,27 @@ header{
 .tab-pane.active{display:flex;animation:fadeIn .18s ease}
 
 /* Tab Control */
-.ctrl-pad{padding:18px 14px;display:flex;flex-direction:column;gap:16px;background:radial-gradient(120% 55% at 50% 0%,rgba(255,34,34,0.09),transparent 62%)}
-.now-card{display:flex;flex-direction:column;align-items:center;gap:14px;background:transparent;border:none;border-radius:0;padding:8px 4px 2px}
-.now-thumb{width:100%;max-width:300px;aspect-ratio:16/9;height:auto;border-radius:14px;object-fit:cover;background:var(--surface-2);box-shadow:0 12px 40px rgba(0,0,0,0.55)}
-.now-info{width:100%;max-width:340px;overflow:hidden;display:flex;flex-direction:column;gap:10px}
-.now-info .title{font-size:1.02rem;font-weight:700;line-height:1.3;letter-spacing:-0.2px;text-align:center;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ctrl-pad{padding:20px 18px 26px;display:flex;flex-direction:column;gap:14px;background:radial-gradient(130% 46% at 50% -4%,var(--np-glow,hsl(280 55% 22%)) 0%,transparent 55%),linear-gradient(180deg,rgba(20,16,28,0.55) 0%,var(--bg) 38%)}
+.now-card{display:flex;flex-direction:column;align-items:stretch;background:transparent;border:none;border-radius:0;padding:4px 0 0}
+.now-thumb{width:100%;max-width:340px;aspect-ratio:1;height:auto;margin:0 auto 22px;border-radius:8px;object-fit:cover;background:linear-gradient(135deg,#2a2440,#1b1730);box-shadow:0 16px 48px rgba(0,0,0,0.55)}
+.now-info{overflow:hidden;display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.now-info .title{font-size:1.3rem;font-weight:700;line-height:1.26;letter-spacing:-0.3px;text-align:left;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.np-sub{font-size:0.84rem;color:var(--text-2);font-weight:500}
+.np-transport{display:flex;align-items:center;justify-content:space-between;padding:4px 2px}
+.np-transport .ctrl-sm{width:56px;height:56px}
+.np-transport .ctrl-sm svg{width:25px;height:25px}
+.np-transport .ctrl-sm.on{color:var(--accent)}
+.np-transport .play-btn{width:74px;height:74px;background:#fff;box-shadow:0 6px 22px rgba(0,0,0,0.4)}
+.np-transport .play-btn:hover{background:#fff;transform:scale(1.05)}
+.np-transport .play-btn svg{width:30px;height:30px;fill:#0a0a0a}
+.np-upnext{margin-top:6px}
+.upnext-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.autoplay-switch{display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--text-3);font-family:inherit;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer}
+.autoplay-switch .sw{width:34px;height:20px;border-radius:20px;background:var(--surface-3);position:relative;transition:var(--t)}
+.autoplay-switch .sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:var(--t)}
+.autoplay-switch.on{color:var(--text)}
+.autoplay-switch.on .sw{background:var(--accent)}
+.autoplay-switch.on .sw::after{left:16px}
 .section-label{font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);display:flex;align-items:center;gap:6px}
 .section-label svg{width:12px;height:12px}
 .mode-toggles{display:flex;gap:6px;justify-content:center}
@@ -524,37 +540,34 @@ header{
         <img class="now-thumb" id="now-thumb" src="" alt="">
         <div class="now-info">
           <div class="title" id="now-title">---</div>
-          <div class="progress-wrap">
-            <div class="progress-bar" onclick="remoteSeekClick(event)">
-              <div class="progress-fill" id="remote-progress-fill"></div>
-            </div>
-            <div class="time-row">
-              <span id="remote-time-cur">0:00</span>
-              <span id="remote-time-dur">0:00</span>
-            </div>
+          <div class="np-sub">En vivo · TV</div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar" onclick="remoteSeekClick(event)">
+            <div class="progress-fill" id="remote-progress-fill"></div>
+          </div>
+          <div class="time-row">
+            <span id="remote-time-cur">0:00</span>
+            <span id="remote-time-dur">0:00</span>
           </div>
         </div>
       </div>
-      <div class="play-center">
-        <button class="ctrl-sm" onclick="sendCmd('seek-relative',{delta:-10})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
-          <span>-10s</span>
+      <div class="play-center np-transport">
+        <button class="ctrl-sm" id="btn-shuffle" onclick="toggleShuffle()" aria-label="Aleatorio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
         </button>
-        <button class="ctrl-sm" onclick="sendCmd('prev')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
-          <span>Ant</span>
+        <button class="ctrl-sm" onclick="sendCmd('prev')" aria-label="Anterior">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2.6" height="16" rx="1"/></svg>
         </button>
         <button class="play-btn" id="play-btn" onclick="togglePlayPause()">
           <svg id="ico-play" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
           <svg id="ico-pause" viewBox="0 0 24 24" fill="white" style="display:none"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
         </button>
-        <button class="ctrl-sm" onclick="sendCmd('next')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-          <span>Sig</span>
+        <button class="ctrl-sm" onclick="sendCmd('next')" aria-label="Siguiente">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="16.4" y="4" width="2.6" height="16" rx="1"/></svg>
         </button>
-        <button class="ctrl-sm" onclick="sendCmd('seek-relative',{delta:10})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-          <span>+10s</span>
+        <button class="ctrl-sm" id="btn-repeat" onclick="cycleRepeat()" aria-label="Repetir">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
         </button>
       </div>
       <div id="remote-skip-ad" style="display:none;margin:8px 0">
@@ -567,27 +580,13 @@ header{
         <input type="range" id="vol-slider" min="0" max="100" value="100" oninput="sendVol(this.value)">
         <span class="vol-val" id="vol-val">100%</span>
       </div>
-      <div class="mode-toggles">
-        <button class="toggle-btn" id="btn-shuffle" onclick="toggleShuffle()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-          Shuffle
-        </button>
-        <button class="toggle-btn" id="btn-repeat" onclick="cycleRepeat()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-          <span id="repeat-label">Repetir</span>
-        </button>
-        <button class="toggle-btn on" id="btn-autoplay" onclick="toggleAutoplay()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.178 8c1.014 0 1.84.82 1.84 1.83v4.34c0 1.01-.826 1.83-1.84 1.83-.51 0-.998-.21-1.348-.58l-2.06-2.17a1.83 1.83 0 0 1 0-2.5l2.06-2.17c.35-.37.838-.58 1.348-.58Z"/><path d="M5.822 8c-1.014 0-1.84.82-1.84 1.83v4.34c0 1.01.826 1.83 1.84 1.83.51 0 .998-.21 1.348-.58l2.06-2.17a1.83 1.83 0 0 0 0-2.5L7.17 8.58A1.86 1.86 0 0 0 5.822 8Z"/></svg>
-          <span>Autoplay</span>
-        </button>
-      </div>
-      <div class="q-section">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="section-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>
-            A continuación <span class="q-count-badge" id="queue-count">0</span>
+      <div class="q-section np-upnext">
+        <div class="upnext-head">
+          <div class="section-label">A continuación <span class="q-count-badge" id="queue-count">0</span></div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="autoplay-switch on" id="btn-autoplay" onclick="toggleAutoplay()" aria-label="Autoplay">Autoplay<span class="sw"></span></button>
+            <button class="btn btn-sec btn-xs" onclick="clearQueue()">Limpiar</button>
           </div>
-          <button class="btn btn-sec btn-xs" onclick="clearQueue()">Limpiar</button>
         </div>
         <div class="q-list" id="queue-list"><div class="q-empty">Cola vacía</div></div>
       </div>
@@ -1401,7 +1400,9 @@ function updateRemoteNowBar(){
   if(currentVideoId){
     if(card)card.style.display='flex';
     const t=document.getElementById('now-title');if(t)t.textContent=currentTitle||currentVideoId;
-    const th=document.getElementById('now-thumb');if(th)th.src='https://i.ytimg.com/vi/'+currentVideoId+'/mqdefault.jpg';
+    const th=document.getElementById('now-thumb');if(th)th.src='https://i.ytimg.com/vi/'+currentVideoId+'/hqdefault.jpg';
+    const pad=document.querySelector('#tab-control .ctrl-pad');
+    if(pad){let h=0;for(let i=0;i<currentVideoId.length;i++)h=(h*31+currentVideoId.charCodeAt(i))%360;pad.style.setProperty('--np-glow','hsl('+h+' 55% 22%)');}
   }else{if(card)card.style.display='none';}
 }
 function hostSeekClick(e){
@@ -1438,7 +1439,7 @@ function renderRepeatBtn(){
   const lbl=document.getElementById('repeat-label');
   if(!btn)return;
   btn.classList.toggle('on',repeatMode!=='none');
-  lbl.textContent=repeatMode==='one'?'Uno':repeatMode==='all'?'Todo':'Repetir';
+  if(lbl)lbl.textContent=repeatMode==='one'?'Uno':repeatMode==='all'?'Todo':'Repetir';
 }
 
 /* ── Queue ── */
